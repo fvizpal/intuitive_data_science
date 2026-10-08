@@ -1,0 +1,283 @@
+# Intuitive Data Science — Project Brief
+
+Oct 8, 2026 · @Vishal
+
+## Project overview
+
+A free, static website that teaches data science concepts through interactive visualizations on mock data, with as few words as possible. A reader moves a slider and immediately sees what the concept does: for example, a high learning rate making gradient descent bounce across the valley and diverge.
+
+**Owner:** a data scientist at a Mumbai business-lending NBFC (B.Tech, NIT Allahabad, 2025). Side project for learning and sharing; no monetization planned.
+
+**Audience:** everyone, weighted toward working practitioners. Beginners should get the intuition; practitioners should get the "how it behaves in real work" layer.
+
+**Edge:** a lending lens. Every concept gets a short real-world note from credit risk, and there is a dedicated track for credit-risk concepts (KS, Gini, WoE/IV, PSI, calibration, cost-based thresholds) that few explorable sites cover.
+
+**Prior art to learn from (not copy):**
+
+- MLU-Explain (Amazon): scroll-driven ML explainers, closest in spirit
+- Seeing Theory (Brown University): probability and statistics
+- Distill.pub and R2D3: high-quality interactive articles
+- TensorFlow Playground: one focused tool done very well
+
+## Principles and non-goals
+
+Every decision should keep the site instant to load, free of friction, and visual first.
+
+**Principles**
+
+1. **Show, then tell.** The visualization comes first; text explains what the reader just saw. Most paragraphs are 1–3 sentences.
+2. **One knob first.** Each widget opens with a single control. More controls unlock further down the page.
+3. **Predict before play.** Ask the reader to guess the outcome before revealing it.
+4. **Instant feedback.** Every control change redraws in under one frame (16 ms) for typical sizes.
+5. **Snappy by default.** Text pages ship zero JavaScript; only widgets load code, and only when visible.
+6. **Reproducible mock data.** Seeded random data so everyone sees the same picture, with a "reshuffle" button.
+7. **Works on a phone.** Every widget is usable at 375 px wide with touch.
+
+**Non-goals**
+
+- No logins, accounts, or user database. Progress lives in `localStorage`.
+- No backend or API server. The whole site is static files.
+- No downloads, installs, or notebooks to run.
+- No Python in the browser by default (Pyodide is about 10 MB). Heavy computation is precomputed at build time into small JSON files.
+- No ads, cookie banners, or tracking beyond privacy-friendly page counts.
+
+## Tech stack
+
+Astro with React islands, deployed as a static site to Cloudflare Pages. The owner already knows React and Next.js; Astro is chosen over Next.js because content pages ship no JavaScript by default.
+
+| Layer | Choice | Why |
+| --- | --- | --- |
+| Framework | Astro (static output) | Zero JS for text; interactive parts load as islands |
+| Widgets | React + TypeScript | Owner's existing skill; hydrate with `client:visible` |
+| Content | MDX via `@astrojs/mdx` | Prose with `<LearningRateDemo />` dropped inline |
+| Charts and scales | `d3-scale`, `d3-shape`, `d3-array` (modular imports only) | Math helpers without pulling in all of D3 |
+| Rendering | SVG for simple charts; Canvas for animation or more than \~1,000 points | SVG is easy to style; Canvas stays smooth |
+| Math | KaTeX via `remark-math` + `rehype-katex` | Formulas render at build time |
+| Styling | Tailwind CSS + CSS variables for theme tokens | Fast to write; dark mode via tokens |
+| Mock data | Seeded PRNG in TypeScript (e.g. mulberry32) | Same data for every reader |
+| Heavy compute | Python scripts at build time → JSON in `public/data/` | Keeps the browser light |
+| Hosting | Cloudflare Pages (Vercel as fallback) | Free, global CDN, deploy on push |
+| Analytics | Umami or Plausible | No cookies, no banner |
+| Quality | ESLint, Prettier, Vitest for math utils, Lighthouse CI | Keeps performance from regressing |
+
+**Later, only if needed:** Three.js (via `@react-three/fiber`) for 3D loss surfaces; Framer Motion for complex transitions. Add them per widget, never globally.
+
+## Repo structure and conventions
+
+One concept = one MDX file plus a folder of widgets. Shared math and UI live in `lib/` and `components/ui/`.
+
+```text
+/
+├─ src/
+│  ├─ content/concepts/          # one .mdx per concept, with frontmatter
+│  │   └─ learning-rate.mdx
+│  ├─ widgets/                   # React islands, one folder per concept
+│  │   └─ learning-rate/
+│  │       ├─ LearningRateDemo.tsx
+│  │       ├─ gd.ts              # pure math, unit-tested
+│  │       └─ gd.test.ts
+│  ├─ components/
+│  │   ├─ layout/                # ConceptLayout.astro, header, footer
+│  │   └─ ui/                    # Slider, Toggle, PredictPrompt, Reveal, Callout
+│  ├─ lib/
+│  │   ├─ random.ts              # seeded PRNG + distributions
+│  │   ├─ datasets.ts            # mock data generators
+│  │   └─ theme.ts               # reads CSS color tokens for Canvas
+│  ├─ pages/                     # index.astro, concepts/[slug].astro
+│  └─ styles/global.css          # tokens, light + dark
+├─ scripts/precompute/           # Python → public/data/*.json
+├─ public/data/
+├─ CLAUDE.md                     # this brief, condensed
+└─ astro.config.mjs
+```
+
+**Concept frontmatter**
+
+```yaml
+title: Learning rate
+slug: learning-rate
+track: optimization        # optimization | models | evaluation | statistics | credit-risk
+level: beginner            # beginner | intermediate | advanced
+minutes: 4
+prerequisites: [gradient-descent]
+summary: How step size decides whether you converge, crawl, or blow up.
+```
+
+**Conventions**
+
+- Math lives in pure `.ts` files with no React, so it can be unit-tested and reused.
+- Widgets take a `seed` prop and never call `Math.random()` directly.
+- Colors come from CSS variables, never hard-coded hex.
+- Every widget is hydrated with `client:visible`.
+- Each widget's JS bundle stays under 50 KB gzipped (check with `astro build` output).
+
+## Concept page template
+
+Every concept page has the same three layers, so readers learn the site once and stop at the depth they need.
+
+**Layer 1 — Intuition (everyone, always visible)**
+
+1. **Hook:** one line, phrased as the question a practitioner actually asks ("Why does my loss explode?").
+2. **Predict:** a `PredictPrompt` with 2–4 choices. The answer reveals only after a pick.
+3. **Play:** the main widget, one knob first, with 2–3 "try this" suggestions under it.
+4. **What just happened:** 2–3 sentences tying the motion on screen to the idea.
+
+**Layer 2 — The math (collapsed by default)**
+
+5. The key formula in KaTeX, with each symbol mapped to something the reader saw move. For example, the update rule:
+
+```latex
+\theta_{t+1} = \theta_t - \eta \, \nabla L(\theta_t)
+```
+
+**Layer 3 — In practice (practitioners)**
+
+6. **Common misconception:** one short callout.
+7. **In the wild — lending:** where this shows up in credit risk work (e.g. XGBoost `eta` vs `n_estimators`, a 2–5% default rate, validating on a newer vintage).
+8. **Rules of thumb:** 2–4 bullets of what people actually do.
+9. **Next concepts:** links to related pages.
+
+The `ConceptLayout.astro` component should render the shell (title, level, minutes, progress tick, prev/next), and MDX supplies the content for each layer through components: `<Hook>`, `<PredictPrompt>`, `<Explain>`, `<MathDetails>`, `<Misconception>`, `<InTheWild>`, `<RulesOfThumb>`.
+
+## Widget engineering guidelines
+
+Widgets are where performance is won or lost, so they follow the same rules.
+
+**Performance**
+
+- Separate state from drawing: React holds control values; drawing happens in a `useEffect` or a `requestAnimationFrame` loop on a Canvas ref, not by re-rendering hundreds of SVG nodes.
+- Animations run on `requestAnimationFrame` and pause when the widget scrolls off screen (`IntersectionObserver`) or the tab is hidden.
+- Memoize datasets with `useMemo` keyed on the seed and size.
+- Scale Canvas by `devicePixelRatio` so lines stay sharp on phones.
+- Target: Lighthouse performance ≥ 95 on a concept page; largest contentful paint under 1.5 s on 4G.
+
+**Interaction**
+
+- Controls: `Slider`, `Toggle`, `SegmentedControl`, `Button` from `components/ui/`. Each shows its current value.
+- Every widget has "Reset" and "Reshuffle data" buttons.
+- Pointer events cover mouse and touch; draggable points have a hit area of at least 24 px.
+- Learning rate and other scale-like values use a log slider.
+
+**Accessibility**
+
+- Sliders are real `<input type="range">` with labels, so they work with keyboard and screen readers.
+- Each widget has an `aria-label` and a short text summary of what it currently shows (e.g. "Diverged after 6 steps").
+- Never rely on color alone; pair color with shape, dash, or label.
+- Respect `prefers-reduced-motion`: show the final state instead of animating.
+
+**Theming**
+
+- Colors are CSS variables (`--color-ink`, `--color-muted`, `--color-accent`, `--color-good`, `--color-bad`, `--color-grid`) defined for light and dark.
+- Canvas reads them through `lib/theme.ts` and redraws on theme change.
+- One accent color per widget for the thing that matters; everything else is muted.
+
+## Concept roadmap
+
+Three MVP concepts first, then one new concept every 2–3 weeks. The credit-risk track is the long-term differentiator.
+
+| Concept | Track | Phase | Core visual | Lending note |
+| --- | --- | --- | --- | --- |
+| Learning rate | optimization | MVP | Ball stepping down a loss curve; bounce and divergence | XGBoost `eta` vs number of trees |
+| Bias–variance / overfitting | models | MVP | Drag polynomial degree; train vs test error curves | Model fits old vintages, fails on new ones |
+| Threshold, precision and recall | evaluation | MVP | Slide a cutoff over two score distributions; confusion matrix updates | Approval cutoff vs expected losses |
+| Momentum and Adam vs SGD | optimization | Next | Three optimizers racing on a ravine-shaped contour | — |
+| Feature scaling | optimization | Next | Elongated vs round contours; steps zig-zag or go straight | Loan amount vs ratio features |
+| L1 / L2 regularization | models | Next | Coefficient paths as lambda grows; L1 hitting zero | Pruning bureau variables |
+| ROC and AUC | evaluation | Next | ROC curve built point by point as threshold moves | Gini = 2 × AUC − 1 |
+| Decision tree splits | models | Next | Click to split a 2D dataset; impurity drops | Rule-based policy vs model |
+| k-means | models | Next | Step through assign / update iterations | Customer segments |
+| Cross-validation | evaluation | Next | Folds sliding across the data | Out-of-time validation |
+| Central limit theorem | statistics | Next | Sample means from skewed data forming a bell | Portfolio averages |
+| KS statistic | credit-risk | Lending track | Two cumulative curves; the max gap highlighted | Scorecard acceptance metric |
+| WoE and IV | credit-risk | Lending track | Drag bin edges; WoE bars and IV update | Scorecard binning |
+| PSI and drift | credit-risk | Lending track | Shift the population; PSI gauge moves | Monitoring after launch |
+| Calibration | credit-risk | Lending track | Reliability curve; apply Platt / isotonic | PD used for pricing |
+| Class imbalance | credit-risk | Lending track | Accuracy vs recall at a 3% default rate; class weights vs SMOTE | Rare defaults |
+| Cost-sensitive threshold | credit-risk | Lending track | Profit curve from a cost matrix | Loss on default vs margin |
+
+## First concept spec: learning rate
+
+The first build target is `LearningRateDemo`: a ball takes gradient-descent steps on a loss curve, and the learning-rate slider decides whether it crawls, converges, oscillates, or diverges.
+
+**Widget A — 1D loss curve (the core)**
+
+- Loss: `L(x) = (x − 2)² + 1` on x ∈ \[−3, 7\]. Gradient: `2(x − 2)`.
+- Start point x₀ = −2, draggable along the curve.
+- Learning-rate slider, log scale, η from 0.01 to 1.2, default 0.1.
+- Controls: Play / Pause, Step, Reset, step-speed toggle (slow / fast).
+- Each step draws a dot on the curve and an arrow from the previous dot; older dots fade.
+- A side panel shows: step count, current x, current loss, and a status label.
+- Status rules for this quadratic: η < 0.5 = "Converging smoothly"; η = 0.5 = "Lands on the minimum in one step"; 0.5 < η < 1 = "Bouncing but converging"; η = 1 = "Stuck bouncing forever"; η > 1 = "Diverging". Stop after 50 steps or when |x| exceeds the plot.
+- A small loss-vs-step line chart under the main curve, so readers see the same behavior as a training curve.
+
+**Widget B — compare three learning rates (below Layer 1)**
+
+- Three balls on the same curve with η = 0.05, 0.4, 0.95, colored and labeled, stepping in lockstep.
+- Teaches that "too small" is slow and "too big" is noisy, at a glance.
+
+**Widget C — 2D contour (Layer 3, optional for v1)**
+
+- Elongated bowl `L(x, y) = x² + 10y²` drawn as contours on Canvas.
+- Step trail shows zig-zagging across the narrow direction as η grows; sets up the feature-scaling and momentum pages.
+
+**Page copy (draft)**
+
+- Hook: "Why does my training loss explode when I turn the learning rate up?"
+- Predict: "If you double the learning rate from 0.4 to 0.8, the ball will… reach the bottom twice as fast / overshoot and bounce / fly off." (Answer: overshoot and bounce.)
+- Try this: find the one learning rate that lands in a single step; find the smallest value that diverges.
+- What just happened: each step moves by η × slope. Near the bottom the slope is small, so small η crawls; large η overshoots the minimum and lands where the slope is steeper on the other side.
+- In the wild: in XGBoost, `eta` shrinks each tree's contribution. Lower `eta` (0.02–0.05) with more trees usually generalizes better on credit data than 0.3 with few trees, at the cost of training time.
+- Misconception: "A higher learning rate always trains faster." Past the stable range it never converges at all.
+
+**Acceptance criteria**
+
+- [ ] Slider changes redraw instantly; animation holds 60 fps on a mid-range phone
+- [ ] All five status labels reachable and correct
+- [ ] Works with keyboard only and at 375 px wide
+- [ ] `gd.ts` has unit tests for the step function and status classification
+- [ ] Page passes Lighthouse performance ≥ 95
+
+## Milestones, workflow, and using this with Claude Code
+
+At about 30 minutes a day plus weekends (5–6 hours a week), the first public concept ships in week 3 and the MVP in week 10.
+
+**Milestones**
+
+1. **Weeks 1–3:** scaffold the repo, build `ConceptLayout` and the UI kit, ship the learning-rate page, deploy to Cloudflare Pages.
+2. **Weeks 4–8:** bias–variance and threshold/precision–recall pages.
+3. **Weeks 9–10:** home page with a concept map by track, dark mode polish, test with 5–10 colleagues without giving instructions.
+4. **After that:** one concept every 2–3 weeks; each shared on LinkedIn as a short screen recording.
+
+**Weekly rhythm**
+
+- Weekdays (30 min): one small GitHub issue — copy for one layer, a styling fix, one test, one bug.
+- Weekends: build or extend a widget.
+- Backlog lives in GitHub Issues, labeled `concept`, `widget`, `copy`, `infra`, so every session starts by picking one.
+
+**Using this brief with Claude Code**
+
+1. Export this doc as Markdown and save it at the repo root as `CLAUDE.md` (Claude Code reads it automatically each session).
+2. Start Claude Code in an empty folder and give it the first task below.
+3. Work one milestone at a time. Ask it to plan first, then build, then run `npm run build` and the tests before finishing.
+4. When a decision changes (stack, template, conventions), update `CLAUDE.md` so future sessions stay consistent.
+
+**First prompt for Claude Code**
+
+```text
+Read CLAUDE.md. Scaffold the project as described: Astro (static output) with React, MDX,
+Tailwind, KaTeX (remark-math + rehype-katex), TypeScript strict, Vitest, ESLint and Prettier.
+Create the folder structure, global.css with light/dark color tokens, ConceptLayout.astro,
+the UI kit (Slider with log option, Toggle, Button, PredictPrompt, MathDetails, Callout),
+lib/random.ts (seeded mulberry32), and a placeholder learning-rate.mdx that renders.
+Add a GitHub Actions workflow that runs build and tests. Do not build the widget yet.
+Plan first, then implement, then run the build and tests and fix any errors.
+```
+
+**Second prompt**
+
+```text
+Implement LearningRateDemo (Widget A) per the "First concept spec" in CLAUDE.md:
+pure math in gd.ts with unit tests, Canvas rendering, rAF animation that pauses off screen,
+log-scale learning-rate slider, status labels, and the loss-vs-step mini chart.
+Then fill learning-rate.mdx with the three layers using the draft copy.
+```

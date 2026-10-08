@@ -1,0 +1,41 @@
+---
+import { getCollection, render } from 'astro:content';
+import ConceptLayout from '../../components/layout/ConceptLayout.astro';
+import Hook from '../../components/mdx/Hook.astro';
+import Explain from '../../components/mdx/Explain.astro';
+import Misconception from '../../components/mdx/Misconception.astro';
+import InTheWild from '../../components/mdx/InTheWild.astro';
+import RulesOfThumb from '../../components/mdx/RulesOfThumb.astro';
+import MathDetails from '../../components/ui/MathDetails.astro';
+import Callout from '../../components/ui/Callout.astro';
+
+export async function getStaticPaths() {
+  const concepts = await getCollection('concepts');
+  return concepts.map((entry, i) => {
+    const link = (e: (typeof concepts)[number] | undefined) =>
+      e ? { slug: e.data.slug, title: e.data.title } : undefined;
+    return {
+      params: { slug: entry.data.slug },
+      props: { entry, prev: link(concepts[i - 1]), next: link(concepts[i + 1]) },
+    };
+  });
+}
+
+const { entry, prev, next } = Astro.props;
+const { Content } = await render(entry);
+const { title, slug, level, minutes, summary } = entry.data;
+---
+
+<ConceptLayout {title} {slug} {level} {minutes} {summary} {prev} {next}>
+  <Content
+    components={{
+      Hook,
+      Explain,
+      Misconception,
+      InTheWild,
+      RulesOfThumb,
+      MathDetails,
+      Callout,
+    }}
+  />
+</ConceptLayout>

@@ -1,0 +1,80 @@
+---
+title: Learning rate
+slug: learning-rate
+track: optimization
+level: beginner
+minutes: 4
+prerequisites: [gradient-descent]
+summary: How step size decides whether you converge, crawl, or blow up.
+---
+
+import { PredictPrompt } from '../../components/ui/PredictPrompt';
+import { LearningRateDemo } from '../../widgets/learning-rate/LearningRateDemo';
+
+<Hook>Why does my training loss explode when I turn the learning rate up?</Hook>
+
+<PredictPrompt
+  client:visible
+  question="If you double the learning rate from 0.4 to 0.8, the ball will…"
+  choices={['reach the bottom twice as fast', 'overshoot and bounce', 'fly off']}
+  answer={1}
+  explanation="At 0.8 each step jumps past the minimum and lands on the other side, a little closer each time."
+/>
+
+<LearningRateDemo client:visible />
+
+**Try this**
+
+- Find the one learning rate that lands in a single step.
+- Find the smallest value that diverges.
+- Drag the starting ball somewhere else. Do the same rates still behave the same way?
+
+<Explain>
+
+Each step moves by η × slope. Near the bottom the slope is small, so a small η crawls. A large η overshoots the minimum and lands where the slope is steeper on the other side.
+
+</Explain>
+
+<MathDetails summary="The math">
+
+The update rule, one step of gradient descent:
+
+$$
+\theta_{t+1} = \theta_t - \eta \, \nabla L(\theta_t)
+$$
+
+- $\theta_t$ is the ball's position (the dot you see).
+- $\nabla L(\theta_t)$ is the slope under the ball. Steeper means a bigger step.
+- $\eta$ is the learning-rate slider.
+
+For this curve, $L(x) = (x-2)^2 + 1$, so the distance to the minimum shrinks by a fixed factor each step:
+
+$$
+x_{t+1} - 2 = (1 - 2\eta)\,(x_t - 2)
+$$
+
+The factor is positive below 0.5 (smooth), zero at 0.5 (one step), negative between 0.5 and 1 (bouncing), exactly −1 at 1 (stuck), and below −1 past 1 (diverging).
+
+</MathDetails>
+
+<Misconception>
+
+A higher learning rate always trains faster. Past the stable range it never converges at all.
+
+</Misconception>
+
+<InTheWild>
+
+In XGBoost, `eta` shrinks each tree's contribution. Lower `eta` (0.02–0.05) with more trees usually generalizes better on credit data than 0.3 with few trees, at the cost of training time.
+
+</InTheWild>
+
+<RulesOfThumb>
+
+- If the loss goes up or turns to NaN, cut the learning rate by 3–10×.
+- If the loss falls but crawls, raise it until it just starts to wobble, then back off.
+- Pair a small learning rate with more steps (more trees in boosting), and use early stopping to decide when to quit.
+
+</RulesOfThumb>
+
+**Next concepts** (coming soon): Momentum and Adam vs SGD, Feature scaling.
