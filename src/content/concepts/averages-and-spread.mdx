@@ -1,0 +1,172 @@
+---
+title: Averages and spread
+slug: averages-and-spread
+track: statistics
+level: beginner
+minutes: 9
+prerequisites: []
+summary: What does "typical" really mean? Mean, median and mode, and how spread and outliers change the story.
+share: One huge number can drag the average to a place where nobody lives. Move the dots and see.
+---
+
+import { GuessTypical } from '../../widgets/averages/GuessTypical';
+import { ThreeAverages } from '../../widgets/averages/ThreeAverages';
+import { OutlierTug } from '../../widgets/averages/OutlierTug';
+import { SpreadMatters } from '../../widgets/averages/SpreadMatters';
+import { BoxPlotBuilder } from '../../widgets/averages/BoxPlotBuilder';
+import { SkewDial } from '../../widgets/averages/SkewDial';
+import { WeightedAverage } from '../../widgets/averages/WeightedAverage';
+
+<Hook>What does "typical" even mean?</Hook>
+
+<GuessTypical client:visible />
+
+## Three kinds of "average"
+
+Three ways to say "typical". The **mean** is the balance point. The **median** is the middle. The **mode** is the most common.
+
+<ThreeAverages client:visible />
+
+**Try this**
+
+- Drag one dot far to the right. Which marker moves most?
+- Make two values repeat. Does a mode appear?
+- Slide the pivot away from the mean. Why does the plank tip?
+
+## Outliers tug the mean
+
+One extreme value drags the mean. The median hardly notices.
+
+<OutlierTug client:visible />
+
+**Try this**
+
+- Drag the big business down to 10. Do the mean and median agree again?
+- Push it to 200. Which card moves?
+- Press **Remove the outlier**. Is there now a business near the mean?
+
+<Misconception>
+
+The average is not always what a typical person looks like. A few very large loans can pull the average loan ticket up; the median ticket is what most borrowers actually take.
+
+</Misconception>
+
+## How spread out?
+
+Same average, very different data. Spread tells you how much to trust the average.
+
+<SpreadMatters client:visible />
+
+**Try this**
+
+- Slide Group A's spread up until it matches Group B. Does the mean move?
+- Which group would you trust the average of more?
+
+<InTheWild>
+
+Two branches both average a 6% default rate, but one swings from 1% to 12% month to month. The average alone hides that.
+
+</InTheWild>
+
+<MathDetails summary="The math: standard deviation">
+
+$$
+s = \sqrt{\frac{\sum_i \left(x_i - \bar{x}\right)^2}{n-1}}
+$$
+
+- $x_i - \bar{x}$ is how far dot $i$ sits from the mean triangle.
+- Squaring makes every distance positive, so left and right do not cancel.
+- Adding them up and dividing by $n-1$ gives an average squared distance.
+- The square root brings it back to the units you started with: the width of the dashed band.
+
+We divide by $n-1$ instead of $n$ because the data are a sample, and a sample's own mean sits a little closer to its dots than the true mean would. It is the "sample std".
+
+</MathDetails>
+
+## Quartiles, percentiles and the box plot
+
+Sort the data, cut it into four equal parts. The box holds the middle half.
+
+<BoxPlotBuilder client:visible />
+
+**Try this**
+
+- Press **25th**, **50th**, **75th**. Where do the three box lines land?
+- Turn on **Show histogram**. Which bars hold the box?
+- Press **Reshuffle** a few times. Do the hollow outlier circles appear on the left or the right?
+
+<Explain level={3}>
+
+A percentile answers: "what share of values is below this one?" The median is the 50th, and the box runs from the 25th to the 75th. Hollow circles are values more than 1.5 box-widths beyond the box.
+
+</Explain>
+
+## When mean and median disagree
+
+When the data has a long tail, the mean follows the tail and the median stays put. The gap between them is a quick sign of skew.
+
+<SkewDial client:visible />
+
+**Try this**
+
+- Slide the skew from left to right. Which marker moves further?
+- Press **Days past due**. Why is the median 0 but the mean not?
+- Press **Bimodal**. Is there a customer anywhere near the mean?
+
+<Misconception>
+
+A single average can hide two different groups. If the data has two peaks, the mean lands between them, where hardly anyone is.
+
+</Misconception>
+
+## Which one should I use?
+
+<RulesOfThumb level={3} title="Pick the average for your data">
+
+| Your data                                                       | Use                                            |
+| --------------------------------------------------------------- | ---------------------------------------------- |
+| Roughly symmetric, no outliers                                  | Mean                                           |
+| Skewed data or outliers (income, loan size, turnover, balances) | Median                                         |
+| Categories or the most common value (product type, DPD bucket)  | Mode                                           |
+| Always report the spread next to the center                     | SD for symmetric data, IQR for skewed data     |
+| Long-tailed data you want to summarise robustly                 | Trimmed mean (drop the extremes, then average) |
+
+</RulesOfThumb>
+
+Sometimes the values do not count equally. You bought six fruits at six prices, but far more of the cheap ones.
+
+<WeightedAverage client:visible />
+
+**Try this**
+
+- Drag the bananas down to 1 kg. Does the simple average move?
+- Push them to 30 kg. Where does the weighted average end up?
+
+<MathDetails summary="The math: weighted mean">
+
+$$
+\bar{x}_w = \frac{\sum_i w_i x_i}{\sum_i w_i}
+$$
+
+- $x_i$ is a fruit's price per kg (where its bubble sits).
+- $w_i$ is the kilos you bought (how big the bubble is). More kilos pull the average toward that price.
+- With equal weights every $w_i$ is the same, and this is just the ordinary mean.
+
+</MathDetails>
+
+<InTheWild>
+
+- **Report the median and percentiles** for ticket size, income and turnover, not just the mean.
+- **The mean is still right for totals:** total disbursement is the number of loans times the mean ticket.
+- **Compare spread by segment** before comparing averages across products or branches.
+- **Skewed variables are often log-transformed** before modelling.
+- **Dashboard averages are usually simple averages** when they should be weighted ones, like an interest rate that ignores loan size.
+- **Look at an outlier before deleting it.** Is it a data error, or a genuine large borrower?
+
+</InTheWild>
+
+<Callout title="Next">
+
+**[Correlation](/concepts/correlation/)** uses these ideas: the mean and the standard deviation.
+
+</Callout>
