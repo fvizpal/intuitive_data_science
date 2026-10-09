@@ -6,8 +6,6 @@ Oct 8, 2026 · @Vishal
 
 A free, static website that teaches data science concepts through interactive visualizations on mock data, with as few words as possible. A reader moves a slider and immediately sees what the concept does: for example, a high learning rate making gradient descent bounce across the valley and diverge.
 
-**Owner:** a data scientist at a Mumbai business-lending NBFC (B.Tech, NIT Allahabad, 2025). Side project for learning and sharing; no monetization planned.
-
 **Audience:** everyone, weighted toward working practitioners. Beginners should get the intuition; practitioners should get the "how it behaves in real work" layer.
 
 **Edge:** a lending lens. Every concept gets a short real-world note from credit risk, and there is a dedicated track for credit-risk concepts (KS, Gini, WoE/IV, PSI, calibration, cost-based thresholds) that few explorable sites cover.
@@ -190,7 +188,8 @@ Three MVP concepts first, then one new concept every 2–3 weeks. The credit-ris
 | Central limit theorem | statistics | Next | Sample means from skewed data forming a bell | Portfolio averages |
 | Correlation (Pearson and Spearman) | statistics | **Done** | Values vs ranks; one outlier faking r; twin features splitting betas | Spearman for skewed bureau and income variables; dedupe before scorecards |
 | KS statistic | credit-risk | Lending track | Two cumulative curves; the max gap highlighted | Scorecard acceptance metric |
-| WoE and IV | credit-risk | Lending track | Drag bin edges; WoE bars and IV update | Scorecard binning |
+| WoE and IV | credit-risk | **Done** | Drag bin edges; WoE bars and IV update; noise feature gaining IV with more bins | Scorecard binning; leakage shows up as IV above 0.5 |
+| From WoE to a scorecard | credit-risk | Planned | WoE-encoded features into a logistic model, then scorecard points | PD scorecard build; follow-up to WoE and IV |
 | PSI and drift | credit-risk | Lending track | Shift the population; PSI gauge moves | Monitoring after launch |
 | Calibration | credit-risk | Lending track | Reliability curve; apply Platt / isotonic | PD used for pricing |
 | Class imbalance | credit-risk | Lending track | Accuracy vs recall at a 3% default rate; class weights vs SMOTE | Rare defaults |

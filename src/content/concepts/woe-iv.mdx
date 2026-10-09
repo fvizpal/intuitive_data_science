@@ -1,0 +1,157 @@
+---
+title: Weight of Evidence and Information Value
+slug: woe-iv
+track: credit-risk
+level: beginner
+minutes: 10
+prerequisites: []
+summary: Which features are actually worth keeping? WoE shows what each bin says about risk, IV turns it into one score.
+share: Which of your 200 features is worth keeping? Drag the bin edges and watch the evidence change.
+---
+
+import { DataControls } from '../../widgets/woe-iv/DataControls';
+import { GuessFeature } from '../../widgets/woe-iv/GuessFeature';
+import { BinsAndOdds } from '../../widgets/woe-iv/BinsAndOdds';
+import { WoEBuilder } from '../../widgets/woe-iv/WoEBuilder';
+import { FeatureRanking } from '../../widgets/woe-iv/FeatureRanking';
+import { BinEditor } from '../../widgets/woe-iv/BinEditor';
+import { NoiseTrap } from '../../widgets/woe-iv/NoiseTrap';
+
+<Hook>Which of my 200 features is actually worth keeping?</Hook>
+
+<Callout title="Two words to remember">
+
+**Good** = repaid. **Bad** = defaulted.
+
+</Callout>
+
+<GuessFeature client:visible />
+
+<DataControls client:visible />
+
+## Bins and odds
+
+Group customers into bins. Compare each bin's default rate with the portfolio average.
+
+<BinsAndOdds client:visible />
+
+**Try this**
+
+- Pick a bin. Is it riskier or safer than the dashed line?
+- Switch the feature. Which one separates safe from risky bins best?
+
+## Weight of evidence
+
+Does this bin hold more good customers or more bad customers than you'd expect?
+
+<WoEBuilder client:visible />
+
+<Misconception>
+
+WoE is not the default rate. It compares who is in the bin, not how many in the bin default.
+
+</Misconception>
+
+<MathDetails summary="The math: WoE">
+
+$$
+\mathrm{WoE}_i = \ln\frac{\%\mathrm{good}_i}{\%\mathrm{bad}_i}
+$$
+
+- $\%\mathrm{good}_i$ is the teal-grey bar: the share of all good customers who sit in bin $i$.
+- $\%\mathrm{bad}_i$ is the coral-grey bar: the share of all bad customers in bin $i$.
+- The ratio is step 1, the $\ln$ is step 2, and the result is the big number in step 3.
+- Positive means safer than the portfolio average, negative means riskier, and 0 means no information.
+
+Some textbooks use $\ln(\%\mathrm{bad}_i / \%\mathrm{good}_i)$ instead, which flips every sign. This page always uses good over bad.
+
+</MathDetails>
+
+## Information value
+
+Add up each bin's evidence, weighted by how different its good and bad shares are. One number per feature.
+
+<FeatureRanking client:visible />
+
+<RulesOfThumb level={3} title="How strong is an IV?">
+
+| IV          | Reading                       |
+| ----------- | ----------------------------- |
+| below 0.02  | Not useful                    |
+| 0.02 to 0.1 | Weak                          |
+| 0.1 to 0.3  | Medium                        |
+| 0.3 to 0.5  | Strong                        |
+| above 0.5   | Suspicious: check for leakage |
+
+These cutoffs are a convention, not a law.
+
+</RulesOfThumb>
+
+<MathDetails summary="The math: IV">
+
+$$
+\mathrm{IV} = \sum_i \left(\%\mathrm{good}_i - \%\mathrm{bad}_i\right)\,\mathrm{WoE}_i
+$$
+
+- $\mathrm{WoE}_i$ is the bar from the last widget: which way the bin leans.
+- $\%\mathrm{good}_i - \%\mathrm{bad}_i$ is how different the two shares are. A bin where they match adds nothing.
+- Both factors have the same sign, so every bin adds zero or more. A coral bin helps just as much as a teal one.
+- The sum is the stacked bar: the feature's one-number score.
+
+</MathDetails>
+
+## Binning
+
+You choose the bins. Move the edges and watch the evidence change.
+
+<BinEditor client:visible />
+
+**Try this**
+
+- Press **Add split** until you have 8 bins. Do the WoE bars zig-zag?
+- Choose **Equal width** on monthly turnover. Which bins get too small to trust?
+
+<Explain level={3} title="Rules for good bins">
+
+- **Start with equal-count bins.** Every bin has plenty of people, so no bin is a fluke.
+- **Smooth WoE is a feature.** Steady steps mean a real trend; a zig-zag is usually noise.
+- **Tiny bins mislead.** With a handful of defaulters, one more or fewer swings the WoE a lot.
+
+</Explain>
+
+## The noise trap
+
+More bins always raises IV, even for a feature that means nothing.
+
+<NoiseTrap client:visible />
+
+**Try this**
+
+- Drag the slider to 30 bins. When does the random number cross the 0.02 line?
+- Press **Resample data** a few times. The random line wobbles, the bureau line stays above it.
+
+<Misconception>
+
+Higher IV is not always better. Chasing IV by adding bins just fits noise.
+
+</Misconception>
+
+## In practice
+
+<InTheWild>
+
+- **Why scorecards use WoE.** Every feature becomes a straight line in log-odds, which is what logistic regression assumes. Missing values get their own bin, and outliers just fall into an end bin.
+- **Zero-defaulter bins** give an infinite WoE. Smooth them (add a small constant) or merge them with a neighbour.
+
+</InTheWild>
+
+<RulesOfThumb level={3} title="What people actually do">
+
+- **Keep bins big enough:** at least 5% of people, or about 30 to 50 defaulters per bin. At a 4% default rate that allows only a handful of bins.
+- **Do not trust IV alone.** It ranks features but does not see interactions, and it depends on your binning.
+- **Check IV on resampled or out-of-time data.** At a 2 to 5% default rate it is noisy on small samples.
+- **Workflow:** screen by IV, then remove near-duplicates using the [correlation page](/concepts/correlation), then build the model.
+
+</RulesOfThumb>
+
+**Coming next:** From WoE to a scorecard.
