@@ -23,10 +23,10 @@ export async function getStaticPaths() {
 
 const { entry, prev, next } = Astro.props;
 const { Content } = await render(entry);
-const { title, slug, level, minutes, summary } = entry.data;
+const { title, slug, level, minutes, summary, share } = entry.data;
 ---
 
-<ConceptLayout {title} {slug} {level} {minutes} {summary} {prev} {next}>
+<ConceptLayout {title} {slug} {level} {minutes} {summary} {share} {prev} {next}>
   <Content
     components={{
       Hook,

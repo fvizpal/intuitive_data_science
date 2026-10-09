@@ -11,6 +11,8 @@
   --color-good: #2b8a3e;
   --color-bad: #c92a2a;
   --color-grid: #e4e2dc;
+  --color-pos: #0b7285; /* teal: positive / agreeing */
+  --color-neg: #d9480f; /* coral: negative / disagreeing */
   color-scheme: light;
 }
 
@@ -24,6 +26,8 @@
     --color-good: #5fcf80;
     --color-bad: #ff7b7b;
     --color-grid: #2c3340;
+    --color-pos: #3bc9db;
+    --color-neg: #ff8f6b;
     color-scheme: dark;
   }
 }
@@ -37,6 +41,8 @@
   --color-good: #5fcf80;
   --color-bad: #ff7b7b;
   --color-grid: #2c3340;
+  --color-pos: #3bc9db;
+  --color-neg: #ff8f6b;
   color-scheme: dark;
 }
 
@@ -50,6 +56,8 @@
   --color-good: var(--color-good);
   --color-bad: var(--color-bad);
   --color-grid: var(--color-grid);
+  --color-pos: var(--color-pos);
+  --color-neg: var(--color-neg);
 }
 
 html {
@@ -80,4 +88,43 @@ body {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* Prose rhythm for MDX content (Tailwind preflight strips heading sizes and margins). */
+article > h2 {
+  margin: 2.5rem 0 0.75rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+article > h3 {
+  margin: 1.75rem 0 0.5rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+article > p,
+article section > p {
+  margin: 0.75rem 0;
+}
+article > ul {
+  margin: 0.75rem 0;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+article section > ul,
+article aside ul {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+article a {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+
+/* Long display formulas scroll on their own instead of widening the page on phones. */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 2px;
 }

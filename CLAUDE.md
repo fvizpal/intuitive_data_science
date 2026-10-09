@@ -188,6 +188,7 @@ Three MVP concepts first, then one new concept every 2–3 weeks. The credit-ris
 | k-means | models | Next | Step through assign / update iterations | Customer segments |
 | Cross-validation | evaluation | Next | Folds sliding across the data | Out-of-time validation |
 | Central limit theorem | statistics | Next | Sample means from skewed data forming a bell | Portfolio averages |
+| Correlation (Pearson and Spearman) | statistics | **Done** | Values vs ranks; one outlier faking r; twin features splitting betas | Spearman for skewed bureau and income variables; dedupe before scorecards |
 | KS statistic | credit-risk | Lending track | Two cumulative curves; the max gap highlighted | Scorecard acceptance metric |
 | WoE and IV | credit-risk | Lending track | Drag bin edges; WoE bars and IV update | Scorecard binning |
 | PSI and drift | credit-risk | Lending track | Shift the population; PSI gauge moves | Monitoring after launch |

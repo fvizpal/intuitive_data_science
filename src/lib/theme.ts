@@ -1,4 +1,14 @@
-const TOKENS = ['ink', 'muted', 'accent', 'good', 'bad', 'grid', 'surface'] as const;
+const TOKENS = [
+  'ink',
+  'muted',
+  'accent',
+  'good',
+  'bad',
+  'grid',
+  'surface',
+  'pos',
+  'neg',
+] as const;
 export type ThemeColors = Record<(typeof TOKENS)[number], string>;
 
 /** Reads CSS color tokens so Canvas drawing follows light/dark mode. */

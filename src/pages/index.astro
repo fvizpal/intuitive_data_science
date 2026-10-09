@@ -2,7 +2,19 @@
 import { getCollection } from 'astro:content';
 import '../styles/global.css';
 
+const TRACKS = [
+  { id: 'optimization', label: 'Optimization' },
+  { id: 'models', label: 'Models' },
+  { id: 'evaluation', label: 'Evaluation' },
+  { id: 'statistics', label: 'Statistics' },
+  { id: 'credit-risk', label: 'Credit risk' },
+] as const;
+
 const concepts = await getCollection('concepts');
+const byTrack = TRACKS.map((t) => ({
+  ...t,
+  items: concepts.filter((c) => c.data.track === t.id),
+})).filter((t) => t.items.length > 0);
 ---
 
 <!doctype html>
@@ -10,22 +22,42 @@ const concepts = await getCollection('concepts');
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Data science concepts you can move with a slider."
+    />
     <title>Intuitive Data Science</title>
   </head>
   <body>
     <main class="mx-auto max-w-3xl px-4 py-12">
       <h1 class="mb-2 text-4xl font-bold">Intuitive Data Science</h1>
       <p class="text-muted">Move a slider. See what the concept does.</p>
-      <ul class="mt-8 list-none space-y-3 p-0">
-        {concepts.map((c) => (
-          <li>
-            <a href={`/concepts/${c.data.slug}/`} class="font-semibold">
-              {c.data.title}
-            </a>
-            <span class="text-muted"> — {c.data.summary}</span>
-          </li>
+      <nav aria-label="Concept map" class="mt-8 space-y-8">
+        {byTrack.map((t) => (
+          <section>
+            <h2 class="m-0 mb-3 text-sm font-semibold tracking-wide text-muted uppercase">
+              {t.label}
+            </h2>
+            <ul class="m-0 grid list-none gap-4 p-0 sm:grid-cols-2">
+              {t.items.map((c) => (
+                <li>
+                  <a
+                    href={`/concepts/${c.data.slug}/`}
+                    class="block h-full rounded-md border border-grid bg-surface p-4 no-underline transition-colors hover:border-accent"
+                  >
+                    <span class="font-semibold text-ink">{c.data.title}</span>
+                    <span class="text-sm text-muted">
+                      {' '}
+                      · {c.data.level} · {c.data.minutes} min
+                    </span>
+                    <span class="mt-1 block text-sm text-muted">{c.data.summary}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
         ))}
-      </ul>
+      </nav>
     </main>
   </body>
 </html>

@@ -12,6 +12,8 @@ const concepts = defineCollection({
     minutes: z.number().int().positive(),
     prerequisites: z.array(z.string()).default([]),
     summary: z.string(),
+    /** Optional one-liner for social cards; falls back to `summary`. */
+    share: z.string().optional(),
   }),
 });
 

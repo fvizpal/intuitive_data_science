@@ -1,0 +1,183 @@
+---
+title: Correlation
+slug: correlation
+track: statistics
+level: beginner
+minutes: 8
+prerequisites: []
+summary: When one thing goes up, what does the other tend to do? And why Pearson and Spearman can disagree.
+share: Drag one point and watch a correlation appear out of pure noise. Pearson vs Spearman, explained with your hands.
+---
+
+import { CorrelationExplorer } from '../../widgets/correlation/CorrelationExplorer';
+import { GuessTheR } from '../../widgets/correlation/GuessTheR';
+import { TwinFeatures } from '../../widgets/correlation/TwinFeatures';
+import { PearsonRectangles } from '../../widgets/correlation/PearsonRectangles';
+import { PearsonVsSpearman } from '../../widgets/correlation/PearsonVsSpearman';
+import { SkewedIncomeVsLoan } from '../../widgets/correlation/SkewedIncomeVsLoan';
+
+<Hook>Do these two things move together?</Hook>
+
+## What is correlation
+
+When one thing goes up, what does the other tend to do? Cold-drink sales rise on hot days (positive). Sweater sales fall as it gets hotter (negative). Shoe size and exam marks have no link (about zero).
+
+<CorrelationExplorer client:visible />
+
+**Try this**
+
+- Slide to +1, then to −1. What shape do the points make?
+- Set 0.3. Would you have spotted a pattern without the number?
+
+<Explain level={3} title="Reading the number">
+
+Correlation runs from −1 to +1. The **sign** is the direction. The **size** is how consistently the two move together, not how steep the line is.
+
+</Explain>
+
+Now test your eye. Most people find this harder than it looks.
+
+<GuessTheR client:visible />
+
+## Why it matters, and where it goes wrong
+
+If two things move together, knowing one helps you predict the other. That makes correlation the fastest first look at which inputs relate to an outcome: bureau score against default, or business turnover against EMIs paid on time.
+
+<Misconception>
+
+**"Correlation means causation."** Ice-cream sales and drownings both rise in summer, because heat drives both (a _confounder_). In lending, larger loans can show lower default rates only because they pass stricter underwriting, not because a bigger loan makes anyone safer.
+
+</Misconception>
+
+### Why we dedupe highly correlated variables
+
+Two witnesses who heard the same story from the same person are not two independent confirmations. Two features that carry the same information are the same: the model gets one signal, but it has to split the credit between them.
+
+**The setup.** We predict an outcome $y$ from two features. Only **x1** truly drives $y$. **x2** is just a noisy copy of x1 (think bureau score vs a second score built from the same data).
+
+**What β means.** After training, the model gives each feature some **credit**: β1 for x1 and β2 for x2. The fair answer is β1 = 1 and β2 = 0.
+
+**What "Retrain" does.** Each press trains the model again on a slightly different random sample of the same history, like refitting next month on a new batch of loans.
+
+<TwinFeatures client:visible />
+
+**Try this**
+
+- At 0.98, press **Retrain** a few times. x1's credit and x2's credit jump around (even to negative) because the model cannot tell the twins apart.
+- Look at the **total credit** (β1 + β2). It stays near 1 every time: the model knows the pair matters, it just cannot decide who gets the credit.
+- Slide similarity toward 0, or switch on **Drop x2**. The wobble disappears.
+
+<Explain level={3}>
+
+Think of two colleagues who always do the same job together. You can see the work got done, but not who did it, so each review hands out the credit differently. The model has the same problem: any split of the credit between x1 and x2 fits the data almost equally well, so each new sample picks a different split. In practice that means:
+
+- **Unstable coefficients** that change on every refresh.
+- **Flipped signs** that break scorecard explainability ("higher income raises risk?").
+- **Split importance** in tree models, so neither feature looks important.
+- **Wasted compute and monitoring** for features that add nothing.
+
+</Explain>
+
+<RulesOfThumb level={3}>
+
+- Screen pairs with |correlation| above roughly **0.7–0.9**. The exact cutoff is a judgment call.
+- Check the **VIF**. Above 5–10 is a warning, because it catches one feature explained by a combination of others.
+- From each correlated group, keep the feature with the best **IV or AUC**, the most **stable over time**, the best **coverage**, and the **easiest to explain**.
+
+</RulesOfThumb>
+
+## Pearson
+
+Pearson asks: **how well do the points fit a straight line?** It uses the actual values.
+
+<PearsonRectangles client:visible />
+
+**Try this**
+
+- Drag one point far into the top-left corner. One big hatched rectangle drags r down.
+- Set the correlation to 0. The two kinds of area cancel out.
+
+<Explain level={3}>
+
+Every point draws a rectangle to the mean point. Points that agree (both above or both below the mean) push r up. Points that disagree push it down. Pearson r is simply the net area, rescaled to run from −1 to +1.
+
+</Explain>
+
+<MathDetails summary="The math: Pearson r">
+
+$$
+r = \frac{\sum_i (x_i - \bar{x})(y_i - \bar{y})}{\sqrt{\sum_i (x_i - \bar{x})^2 \; \sum_i (y_i - \bar{y})^2}}
+$$
+
+- $\bar{x}$ and $\bar{y}$ are the dashed mean lines.
+- $(x_i - \bar{x})(y_i - \bar{y})$ is the signed area of point $i$'s rectangle: positive (teal) when it agrees, negative (coral, hatched) when it disagrees.
+- The numerator is agreeing area minus disagreeing area.
+- The denominator rescales by the spread in x and y, so r does not depend on units and stays between −1 and +1.
+
+</MathDetails>
+
+## Spearman, and the striking difference
+
+Spearman replaces every value with its **rank** (1st, 2nd, 3rd…) and runs Pearson on the ranks. It ignores how far apart the values are and keeps only their order.
+
+**Pearson = values. Spearman = order.**
+
+<PearsonVsSpearman client:visible />
+
+**Try this**
+
+- On **Curved but always rising**, tick **Show ranks**. The curve straightens into a diagonal.
+- On **No pattern + one outlier**, drag the hollow square into the cloud. Pearson collapses.
+- On **Linear**, drag one point far away. Which number moves more?
+
+<Misconception>
+
+**"Correlation near 0 means no relationship."** The U-shape is a perfect pattern, yet both measures score it near 0. Correlation only sees patterns that go one way. Always plot the data.
+
+</Misconception>
+
+<Callout title="Also meet Kendall's tau">
+
+Kendall's τ also uses only order. It compares every pair of points and asks whether they rise together or not. It is more robust with small samples and many ties (for example rating grades).
+
+</Callout>
+
+<MathDetails summary="The math: Spearman ρ">
+
+Spearman's ρ is Pearson's r applied to the ranks:
+
+$$
+\rho = r\big(\operatorname{rank}(x), \operatorname{rank}(y)\big)
+$$
+
+When there are no ties, it simplifies to
+
+$$
+\rho = 1 - \frac{6 \sum_i d_i^2}{n(n^2 - 1)}
+$$
+
+where $d_i$ is the difference between point $i$'s rank in x and its rank in y, and $n$ is the number of points. Perfect order gives $d_i = 0$ for every point, so $\rho = 1$.
+
+</MathDetails>
+
+## Which one to use
+
+<RulesOfThumb level={3} title="Pearson or Spearman?">
+
+| Your data                                                                                    | Use                                     |
+| -------------------------------------------------------------------------------------------- | --------------------------------------- |
+| Roughly linear, no big outliers, and you care about a straight line (feeding a linear model) | Pearson                                 |
+| Skewed: income, loan amount, turnover, balances                                              | Spearman, or log-transform then Pearson |
+| Outliers present                                                                             | Spearman                                |
+| Ordinal: rating grades, DPD buckets, risk bands                                              | Spearman                                |
+| Curved but always rising (or always falling)                                                 | Spearman                                |
+| Default for feature screening on credit data                                                 | Spearman                                |
+| U-shapes and other two-way patterns                                                          | Neither: plot it, or bin it (WoE)       |
+
+</RulesOfThumb>
+
+Real financial variables are skewed. Here are 300 mock borrowers: monthly income has a long right tail, and the loan is about 6× income up to a ₹15 lakh policy cap.
+
+<SkewedIncomeVsLoan client:visible />
+
+**Next concepts** (coming soon): Central limit theorem, L1 / L2 regularization, WoE and IV.

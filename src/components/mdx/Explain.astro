@@ -1,4 +1,14 @@
+---
+interface Props {
+  title?: string;
+  /** Heading level; use 3 when the block sits inside an h2 section. */
+  level?: 2 | 3;
+}
+const { level = 2, title = 'What just happened' } = Astro.props;
+const Heading = level === 3 ? 'h3' : 'h2';
+---
+
 <section class="my-6">
-  <h2 class="mb-2 text-lg font-semibold">What just happened</h2>
+  <Heading class="mb-2 text-lg font-semibold">{title}</Heading>
   <slot />
 </section>

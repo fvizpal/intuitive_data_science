@@ -11,10 +11,12 @@ interface Props {
   level: 'beginner' | 'intermediate' | 'advanced';
   minutes: number;
   summary: string;
+  share?: string | undefined;
   prev?: Link | undefined;
   next?: Link | undefined;
 }
-const { title, slug, level, minutes, summary, prev, next } = Astro.props;
+const { title, slug, level, minutes, summary, share, prev, next } = Astro.props;
+const card = share ?? summary;
 ---
 
 <!doctype html>
@@ -24,6 +26,12 @@ const { title, slug, level, minutes, summary, prev, next } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={summary} />
     <title>{title} · Intuitive Data Science</title>
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content={`${title} · Intuitive Data Science`} />
+    <meta property="og:description" content={card} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={card} />
   </head>
   <body>
     <header class="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 text-sm">
@@ -70,7 +78,7 @@ const { title, slug, level, minutes, summary, prev, next } = Astro.props;
     </main>
 
     <footer class="mx-auto max-w-3xl px-4 py-8 text-sm text-muted">
-      Free, static, and open. No tracking.
+      Free, static, and open.
     </footer>
 
     <script is:inline define:vars={{ slug }}>
