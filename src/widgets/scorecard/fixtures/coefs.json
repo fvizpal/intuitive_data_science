@@ -1,0 +1,13 @@
+{
+  "seed": 42,
+  "features": [
+    "bureau_score",
+    "max_dpd_6m",
+    "years_in_business",
+    "monthly_turnover_lakh"
+  ],
+  "intercept": 3.181757169260045,
+  "coefs": [1.0436965551408341, 1.0142389137669294, 1.1611352595297, 1.0447811572217829],
+  "n": 5000,
+  "statsmodels": "0.15.0"
+}

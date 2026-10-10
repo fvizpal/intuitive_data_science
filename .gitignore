@@ -5,4 +5,5 @@ dist
 *.log
 
 
-CLAUDE.md 
+.tmp
+.claude

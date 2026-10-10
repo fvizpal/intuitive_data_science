@@ -1,5 +1,6 @@
 ---
-import { getCollection, render } from 'astro:content';
+import { render } from 'astro:content';
+import { getOrderedConcepts } from '../../lib/concepts';
 import ConceptLayout from '../../components/layout/ConceptLayout.astro';
 import Hook from '../../components/mdx/Hook.astro';
 import Explain from '../../components/mdx/Explain.astro';
@@ -10,7 +11,7 @@ import MathDetails from '../../components/ui/MathDetails.astro';
 import Callout from '../../components/ui/Callout.astro';
 
 export async function getStaticPaths() {
-  const concepts = await getCollection('concepts');
+  const concepts = await getOrderedConcepts();
   return concepts.map((entry, i) => {
     const link = (e: (typeof concepts)[number] | undefined) =>
       e ? { slug: e.data.slug, title: e.data.title } : undefined;

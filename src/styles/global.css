@@ -128,3 +128,18 @@ article a {
   overflow-y: hidden;
   padding-bottom: 2px;
 }
+
+/* Widget 3 (ks-auc-gini): a drawn pair drops in. Reduced motion shortens this to nothing above. */
+@keyframes pair-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.pair-drop {
+  animation: pair-drop 0.35s ease-out both;
+}

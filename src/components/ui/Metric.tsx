@@ -8,6 +8,8 @@ interface Props {
   /** Text color token for the value. */
   tone?: 'ink' | 'accent' | 'pos' | 'neg' | 'muted';
   large?: boolean;
+  /** Let a long label wrap instead of being cut off with an ellipsis. */
+  wrap?: boolean;
 }
 
 const TONES = {
@@ -19,10 +21,19 @@ const TONES = {
 } as const;
 
 /** A labeled number card. Values are pre-formatted strings so nothing unrounded leaks out. */
-export function Metric({ label, value, hint, tone = 'ink', large = false }: Props) {
+export function Metric({
+  label,
+  value,
+  hint,
+  tone = 'ink',
+  large = false,
+  wrap = false,
+}: Props) {
   return (
     <div className="min-w-0 rounded-md border border-grid bg-bg px-3 py-2">
-      <div className="truncate text-xs text-muted">{label}</div>
+      <div className={`${wrap ? 'leading-tight' : 'truncate'} text-xs text-muted`}>
+        {label}
+      </div>
       <div
         className={`font-mono font-semibold tabular-nums ${large ? 'text-3xl' : 'text-xl'} ${TONES[tone]}`}
       >

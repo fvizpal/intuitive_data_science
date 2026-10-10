@@ -1,5 +1,5 @@
 ---
-import { getCollection } from 'astro:content';
+import { getOrderedConcepts } from '../lib/concepts';
 import '../styles/global.css';
 
 const TRACKS = [
@@ -10,7 +10,7 @@ const TRACKS = [
   { id: 'credit-risk', label: 'Credit risk' },
 ] as const;
 
-const concepts = await getCollection('concepts');
+const concepts = await getOrderedConcepts();
 const byTrack = TRACKS.map((t) => ({
   ...t,
   items: concepts.filter((c) => c.data.track === t.id),

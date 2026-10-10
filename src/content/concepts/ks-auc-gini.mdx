@@ -1,0 +1,203 @@
+---
+title: KS, AUC and Gini
+slug: ks-auc-gini
+track: credit-risk
+level: intermediate
+minutes: 9
+prerequisites: [woe-to-scorecard]
+summary: Two crowds, goods and bads. How well does a score keep them apart? Three ways to measure it.
+---
+
+import { PredictPair } from '../../widgets/separation/PredictPair';
+import { SeparationLab } from '../../widgets/separation/SeparationLab';
+import { KSWalk } from '../../widgets/separation/KSWalk';
+import { KSGap } from '../../widgets/separation/KSGap';
+import { PickAPair } from '../../widgets/separation/PickAPair';
+import { ROCBuilder } from '../../widgets/separation/ROCBuilder';
+import { SampleWobble } from '../../widgets/separation/SampleWobble';
+
+<Hook>Is my score any good at telling good from bad?</Hook>
+
+**Good** = repaid. **Bad** = defaulted. **Higher score = safer.**
+
+<PredictPair client:visible />
+
+## 1. Two crowds
+
+<Explain level={3} title="The idea">
+  A good score keeps two crowds apart. Drag them closer and they blur together.
+</Explain>
+
+<SeparationLab client:visible />
+
+## 2. KS, the biggest gap
+
+<Explain level={3} title="The idea">
+  The score is our measure of risk: the lower the score, the riskier the customer. So line
+  customers up by score, lowest first. Then walk down the line and keep two counts: how
+  many bads you have passed, and how many goods. A good score puts most bads near the
+  front, so the bad count races ahead of the good count and the gap between them grows.
+  Later the line is mostly goods, and the gap shrinks again. The biggest gap is **KS**.
+</Explain>
+
+<KSWalk client:visible />
+
+Same walk, drawn as two curves. Slide the cutoff to move along them.
+
+<KSGap client:visible />
+
+<Misconception>
+  KS looks at one cutoff, the best one. It does not tell you what happens at the others.
+</Misconception>
+
+<MathDetails summary="The math: KS">
+
+$$
+\mathrm{KS} = \max_{c}\;\bigl|\,F_{\text{bad}}(c) - F_{\text{good}}(c)\,\bigr|
+$$
+
+- $F_{\text{bad}}(c)$ is the share of bads with a score below $c$: the dashed curve.
+- $F_{\text{good}}(c)$ is the same for goods: the solid curve.
+- KS is the tallest vertical gap between the two curves, anywhere.
+
+</MathDetails>
+
+## 3. AUC, the chance a good beats a bad
+
+<Explain level={3} title="The idea">
+  Pick a random good and a random bad. How often does the good one score higher? That
+  chance is **AUC**.
+</Explain>
+
+<PickAPair client:visible />
+
+<MathDetails summary="The math: AUC">
+
+$$
+\mathrm{AUC} = P(\text{good scores higher}) + \tfrac12\,P(\text{tie})
+$$
+
+- It compares every good with every bad, so the default rate does not change it.
+
+**Counting pairs.** With $n_g$ goods and $n_b$ bads, score $s$:
+
+$$
+U = \sum_{i=1}^{n_g}\sum_{j=1}^{n_b}\Bigl[\mathbf 1(s_i > s_j) + \tfrac12\,\mathbf 1(s_i = s_j)\Bigr]
+\qquad
+\mathrm{AUC} = \frac{U}{n_g\,n_b}
+$$
+
+$U$ is the Mann-Whitney statistic: the number of (good, bad) pairs where the good wins, with ties counting half.
+
+**From ranks, without comparing every pair.** Put all $n_g + n_b$ customers in one list, lowest score first, and give each a rank $1, 2, 3, \dots$ (tied scores share the average of their ranks). Let $R_g$ be the sum of the goods' ranks:
+
+$$
+U = R_g - \frac{n_g(n_g+1)}{2}
+\qquad
+\mathrm{AUC} = \frac{R_g - n_g(n_g+1)/2}{n_g\,n_b}
+$$
+
+- $n_g(n_g+1)/2$ is the smallest $R_g$ could be: every good below every bad, ranks $1, 2, \dots, n_g$. Subtracting it counts only the bads each good has beaten.
+- Sorting once is enough, so this takes $O(n \log n)$ instead of $n_g \times n_b$ comparisons.
+
+**Worked example.** Goods $= 2, 4, 6$ and bads $= 1, 3, 5$. Sorted: 1, 2, 3, 4, 5, 6, so the goods have ranks 2, 4, 6 and $R_g = 12$.
+
+$$
+U = 12 - \frac{3\cdot 4}{2} = 6
+\qquad
+\mathrm{AUC} = \frac{6}{3\cdot 3} = 0.67
+$$
+
+Check by pairs: 2 beats 1; 4 beats 1 and 3; 6 beats 1, 3 and 5. That is $1 + 2 + 3 = 6$ wins out of 9 pairs.
+
+</MathDetails>
+
+## 4. ROC and Gini
+
+<Explain level={3} title="The idea">
+  Slide the cutoff and plot goods rejected against bads rejected. A better score bows
+  further up and left. The area under the curve is AUC.
+</Explain>
+
+<ROCBuilder client:visible />
+
+<Explain level={3} title="Gini">
+  Gini rescales AUC so a coin flip is 0 and perfect is 1.
+</Explain>
+
+<MathDetails summary="The math: Gini">
+
+$$
+\mathrm{Gini} = 2\,\mathrm{AUC} - 1
+$$
+
+- AUC runs from 0.5 (coin flip) to 1 (perfect). Gini stretches that to 0 and 1.
+- Coin flip: 2 × 0.5 − 1 = 0. Perfect: 2 × 1 − 1 = 1. AUC 0.76 gives Gini 0.52.
+- A score that ranks the wrong way round has AUC below 0.5, so a negative Gini.
+
+</MathDetails>
+
+## 5. Reality check
+
+<Explain level={3} title="The idea">
+  So far we measured one score on one set of customers. In real work you only ever see
+  one sample, and a different sample would give different numbers. Here the real scorecard
+  from the last page scores a pool of 20,000 new applicants it has never seen, about 4% of
+  them bad. We draw 40 random samples from the pool and measure Gini and KS on each. How
+  far apart do the 40 answers land?
+</Explain>
+
+<SampleWobble client:visible />
+
+**How to read it.** Each blue dot is one sample. The white diamond is the average of the
+40. The black bar runs from the lowest to the highest result. The dashed coral line is
+what the same scorecard scored on the customers it was built on.
+
+**Try this**
+
+- Set the sample size to 500, then draw new samples a few times. The bar gets wide, because
+  500 customers hold only about 20 bads.
+- Move to 5,000. The dots bunch up, because 200 bads give a steadier answer.
+- Compare the dashed line with the diamond. Which one is higher?
+
+<Explain level={3} title="What just happened">
+  What matters is the number of bads, not the number of customers. With 20 bads, a few
+  unlucky ones move Gini a lot, so one sample can say 0.3 and the next 0.6, from the same
+  scorecard. Bigger samples wobble less. The dashed line sits to the right of the dots
+  because a scorecard is fitted to its own data, so it looks best there. New customers
+  rank a little worse. That is why practitioners test on fresh data and quote a range.
+</Explain>
+
+<Misconception>
+  A high AUC does not mean the probabilities are right. A score can rank well and still
+  give wrong PDs.
+</Misconception>
+
+## In practice
+
+<InTheWild>
+
+- KS, AUC and Gini measure ranking only, not whether predicted PDs are accurate.
+- Compare train, test and out-of-time values; a big drop signals overfitting or drift.
+- They ignore the default rate, but approval and bad-rate trade-offs depend on it.
+- With few defaulters, report a range or confidence interval, not one number.
+- Gini here is 2 × AUC − 1, not the Gini impurity used in decision trees.
+- An unusually high KS or Gini deserves a leakage check before celebrating.
+
+</InTheWild>
+
+<RulesOfThumb level={3} title="How strong is the AUC?">
+
+| AUC          | Reading                       |
+| ------------ | ----------------------------- |
+| below 0.55   | coin flip                     |
+| 0.55 to 0.70 | weak                          |
+| 0.70 to 0.80 | acceptable                    |
+| 0.80 to 0.90 | strong                        |
+| above 0.90   | suspicious: check for leakage |
+
+These bands are conventions, not laws.
+
+</RulesOfThumb>
+
+Coming next: PSI and drift.

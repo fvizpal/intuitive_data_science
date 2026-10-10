@@ -1,0 +1,219 @@
+---
+title: From WoE to a scorecard
+slug: woe-to-scorecard
+track: credit-risk
+level: intermediate
+minutes: 9
+prerequisites: [woe-iv]
+summary: How the evidence in each bin becomes one score, and what a cutoff does with it.
+share: Four facts about a business, one number. Build a credit scorecard and move the cutoff yourself.
+---
+
+import { PredictEvidence } from '../../widgets/scorecard/PredictEvidence';
+import { EvidenceStack } from '../../widgets/scorecard/EvidenceStack';
+import { WeighTheEvidence } from '../../widgets/scorecard/WeighTheEvidence';
+import { ScaleDesigner } from '../../widgets/scorecard/ScaleDesigner';
+import { ApplicantScorecard } from '../../widgets/scorecard/ApplicantScorecard';
+import { CutoffExplorer } from '../../widgets/scorecard/CutoffExplorer';
+
+<Hook>How does a bank turn four facts about a business into one number?</Hook>
+
+A small business applies for a loan. The bank knows four things about it: its **bureau score**, how late it has paid before (**days past due**), **years in business** and **monthly turnover**. A **scorecard** turns those four facts into one score, and a **cutoff** turns the score into a yes or no.
+
+<Callout title="The plan: four steps, one per section">
+
+1. **Add up the evidence.** Each fact pushes the applicant toward safer or riskier.
+2. **Weigh it.** Some facts repeat each other, so the model trusts each one a little differently.
+3. **Convert to points.** Raw evidence becomes a friendly score like 600.
+4. **Pick a cutoff.** Everyone at or above it is approved.
+
+</Callout>
+
+<Callout title="Words you need from the last page">
+
+**Good** = repaid. **Bad** = defaulted. **WoE** (weight of evidence) = how much one bin of a feature tells us. **Positive WoE = safer** than average, negative = riskier.
+
+</Callout>
+
+<PredictEvidence client:visible />
+
+## 1. Evidence adds up
+
+Every customer falls into one bin per feature, and each bin has a WoE. Start from the portfolio's overall odds and let each bin push them up or down.
+
+**What are odds?** "24:1" means 24 customers repay for every 1 who defaults. Higher odds are safer.
+
+<EvidenceStack client:visible />
+
+**How to read it.** Read top to bottom. The grey bar is the starting point. Each coloured bar is one fact: **teal ▲** moves the odds up (safer), **coral ▼ with stripes** moves them down (riskier). The last bar is where this customer ends up.
+
+<Callout title="Where does ×2.2 come from?">
+
+WoE is a **log of a ratio**, so undoing the log gives back the ratio. Take the bureau bin "680 or more": it holds **35.5%** of all good customers but only **16%** of all bad ones. That is a ratio of 35.5 ÷ 16 = **2.2**: customers there are 2.2 times as likely to be good as bad, compared with the portfolio. WoE is the log of that ratio: ln(2.2) = **+0.80**. Going the other way, e<sup>0.80</sup> = **2.2**, which is the number the odds get multiplied by. A negative WoE works the same way: e<sup>−0.96</sup> = 0.38, which is the same as dividing the odds by 2.6.
+
+</Callout>
+
+**Try this**
+
+- Press **All safe**, then **All risky**. How far apart do the two customers end up?
+- Press **Mixed**, then switch the risky days-past-due bin to the safest one. Which single change moves the result most?
+
+<Explain level={3} title="What just happened">
+
+Each bin multiplies the odds by a number (×2.2 means "2.2 times better", ÷2.6 means "2.6 times worse"). Strong evidence moves the odds a lot, weak evidence barely moves them. So two safe facts do not automatically beat one risky fact: **it depends on how big each push is**.
+
+</Explain>
+
+<MathDetails summary="The math: adding evidence">
+
+$$
+\ln\frac{\text{good}}{\text{bad}} = \ln\frac{G}{B} + \sum_j \mathrm{WoE}_j
+$$
+
+- $\ln(G/B)$ is the portfolio's starting log-odds: the first bar.
+- Each $\mathrm{WoE}_j$ is one step of the waterfall.
+- Multiplying odds is the same as adding their logs. That is why the evidence is added.
+- Adding works when the features are independent. If two features tell the same story, the sum counts it twice. The next section fixes that.
+
+</MathDetails>
+
+## 2. The model weighs the evidence
+
+Simple adding has a flaw: if two features say the same thing, you count that evidence twice. A **weight** is how much the model trusts a feature's evidence: 1.0 means "take it at face value", 0.5 means "count it half".
+
+<WeighTheEvidence client:visible />
+
+**How to read it.** Each bar is one feature's weight. The dashed line is 1.0, full trust. Right now every feature is separate, so all weights sit near 1.
+
+**Try this**
+
+- Turn on **Add a near-duplicate of bureau score**. Watch the bureau bar split into two bars.
+- Press **Reshuffle data** a few times. The weights wobble a little. Does the split stay near half and half?
+
+<Explain level={3} title="What just happened">
+
+The two bureau copies carry the same evidence, so the model shares one unit of trust between them (about 0.5 each) instead of counting it twice. A weight that goes **negative** is a warning sign: it usually means two overlapping features are fighting each other.
+
+</Explain>
+
+<MathDetails summary="The math: weights">
+
+$$
+\ln\frac{\text{good}}{\text{bad}} = \alpha + \sum_j \beta_j\,\mathrm{WoE}_j
+$$
+
+- $\beta_j$ is the bar: how much the model trusts feature $j$.
+- If the features were independent, every $\beta_j$ would be 1: the plain sum from the last section.
+- Two features carrying the same evidence share one unit of trust between them.
+
+</MathDetails>
+
+## 3. Odds to points
+
+Log-odds are hard to talk about, so banks rescale them into a score. You choose three things: a **base score** (where to start), the **odds at that base** (what 600 means, say 50 good for every 1 bad), and **points to double the odds** (PDO). The scale follows.
+
+<ScaleDesigner client:visible />
+
+**How to read it.** The ladder lists scores for odds from 12.5:1 to 200:1. Each step up is **twice as good**, and costs the same number of points: your PDO. The outlined tags mark your base and your portfolio's actual odds (24:1).
+
+**Try this**
+
+- Drag **Points to double the odds** from 20 to 40. The ladder stretches but nothing changes about who is safer.
+- Drag **Base score** up. Every score shifts, but every gap stays the same.
+
+<Explain level={3} title="What just happened">
+
+The scale is just a ruler. Moving it changes the numbers printed on it, not the customers' real risk. **Higher score = safer** on every setting. The same scale is used by the next two sections.
+
+</Explain>
+
+<MathDetails summary="The math: factor and offset">
+
+$$
+\text{Factor} = \frac{\text{PDO}}{\ln 2}
+\qquad
+\text{Offset} = \text{Base score} - \text{Factor}\cdot\ln(\text{Base odds})
+$$
+
+$$
+\text{Score} = \text{Offset} + \text{Factor}\cdot\ln\frac{\text{good}}{\text{bad}}
+$$
+
+- At the defaults, Factor is 28.85 and Offset is 487.12.
+- Doubling the odds adds $\ln 2$ to the log-odds, which is exactly PDO points.
+
+</MathDetails>
+
+## 4. The scorecard and reason codes
+
+Now put it together. The model's weights and the scale turn every bin into a fixed number of **points**. An applicant's score is just the sum of the points for the bins they fall in.
+
+<ApplicantScorecard client:visible />
+
+**How to read it.** The table lists the points for every bin. Pick one bin per feature on the right: the big number is the total, and it equals the four point values added up. Teal bars are above the typical applicant, coral striped bars are below. **Why this score?** lists the facts that cost the most points.
+
+**Try this**
+
+- Press **Strong applicant**, then **Thin file, missing bureau score**. Which feature drops the score most?
+- Change only the days-past-due bin. How many points is one bad month worth?
+
+<Explain level={3} title="What just happened">
+
+The scorecard is a lookup table anyone can read: no model needed at decision time. And because every bin has its own points, the bank can say exactly **why** an applicant scored low. Those are the reason codes.
+
+</Explain>
+
+<Misconception>
+
+A score does not say who WILL default. It ranks who is more likely to.
+
+</Misconception>
+
+## 5. The cutoff
+
+A score ranks people. A **cutoff** decides what happens: approve everyone at or above it. Below, you see all 5,000 applicants, split into customers who repaid (solid) and customers who defaulted (striped).
+
+<CutoffExplorer client:visible />
+
+**How to read it.** Each histogram shows where that group's scores fall; defaulters sit further left. The black line is the cutoff. Everything to its right is approved. The three cards show what that choice costs and buys.
+
+**Try this**
+
+- Drag the cutoff all the way right. Almost no one defaults, but how many good customers do you turn away?
+- Find a cutoff where defaulters among the approved fall to half the portfolio's 4%. What share of applicants is approved?
+
+<Explain level={3} title="What just happened">
+
+No cutoff is perfect, because the two groups overlap. **Raising the cutoff** removes more defaulters but also more good customers. The right cutoff is a business decision about profit per good loan versus loss per bad one.
+
+</Explain>
+
+## In practice
+
+<InTheWild>
+
+- Coefficients on WoE should be positive; a negative one usually means overlapping features.
+- Points per bin give instant reason codes for declines.
+- Scores are grouped into rating grades, each with a PD, so models line up.
+- A score ranks risk; mapping it to a real PD for pricing is a separate step.
+
+</InTheWild>
+
+<RulesOfThumb level={3} title="What people actually do">
+
+- Build on older vintages, test on newer ones; scores drift over time.
+- Policy rules and overrides sit on top; applicants you rejected never show outcomes (reject inference).
+
+</RulesOfThumb>
+
+## The whole process in 7 steps
+
+1. **Start with past loans.** Every row has the applicant's features (bureau score, days past due, …) and a flag: good (repaid) or bad (defaulted).
+2. **Cut each feature into a few bins**, like bureau score "below 540", "540–619", and so on. Good bins are big enough to trust, and their risk moves steadily in one direction: a higher bureau score is safer, more days late is riskier.
+3. **Work out the WoE of every bin.** Compare the bin's share of all good customers with its share of all bad ones. More goods than bads means positive WoE, which means safer.
+4. **Swap each feature value for its bin's WoE**, then train a logistic regression on those WoE values to predict good vs bad. The weights it learns say how much to trust each feature. That is the model.
+5. **Turn the model into points.** Using the base score, base odds and PDO, every bin gets a fixed number of points. Together they are the scorecard table.
+6. **Score a new applicant.** Find the bin they fall into for each feature, read off its points, and add them up. That total is their score. (It is the same answer as going bin → WoE → model → score, just as a lookup.)
+7. **Pick a cutoff.** Approve everyone at or above it, and check how the scorecard does on newer data before trusting it.
+
+**Coming next:** [KS, AUC and Gini](/concepts/ks-auc-gini/).
