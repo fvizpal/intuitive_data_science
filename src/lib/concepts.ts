@@ -4,6 +4,7 @@ import { getCollection } from 'astro:content';
 const ORDER = [
   'averages-and-spread',
   'correlation',
+  'distributions',
   'learning-rate',
   'woe-iv',
   'woe-to-scorecard',

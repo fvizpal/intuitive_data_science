@@ -39,7 +39,11 @@ export function Metric({
       >
         {value}
       </div>
-      {hint && <div className="truncate text-xs text-muted">{hint}</div>}
+      {hint && (
+        <div className={`${wrap ? 'leading-tight' : 'truncate'} text-xs text-muted`}>
+          {hint}
+        </div>
+      )}
     </div>
   );
 }

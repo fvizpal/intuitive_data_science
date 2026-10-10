@@ -1,0 +1,224 @@
+---
+title: Distributions and the bell curve
+slug: distributions
+track: statistics
+level: beginner
+minutes: 8
+prerequisites: [averages-and-spread]
+summary: What shape is your data, and how unusual is a value? Histograms, the bell curve, z-scores, and why some data needs a log.
+---
+
+import { PredictZ } from '../../widgets/distributions/PredictZ';
+import { BinWidthLab } from '../../widgets/distributions/BinWidthLab';
+import { BellCurve } from '../../widgets/distributions/BellCurve';
+import { EmpiricalRule } from '../../widgets/distributions/EmpiricalRule';
+import { ZScoreCompare } from '../../widgets/distributions/ZScoreCompare';
+import { LogTransform } from '../../widgets/distributions/LogTransform';
+
+<Hook>Is this value normal, or unusual?</Hook>
+
+A friend says, "I got 72 in the exam." Is that great, average, or just okay? You cannot tell from the number alone. You need to know how the rest of the class did: where most marks sit, and how spread out they are. That spread is called a **distribution**, and this page shows how to read one.
+
+<PredictZ client:visible />
+
+## 1. The shape of data
+
+<Explain level={3} title="The idea">
+  Picture a tailor who measures the chest size of 300 customers. Reading 300 numbers tells
+  him nothing, so he stacks them: one pile for 70 to 75 cm, one for 75 to 80 cm, and so
+  on. The piles side by side form a **histogram**. Each pile is a **bar**, and the range
+  of sizes it covers is a **bin**. Below are his 300 measurements.
+</Explain>
+
+<BinWidthLab client:visible />
+
+**Try this**
+
+- Drag the bin width to the smallest value. The bars turn spiky, because each holds only a
+  few customers. Chance looks like a pattern.
+- Drag it to the largest. Almost everyone lands in two bars, and the picture says nothing.
+- Press **Suggest a width**. A readable shape appears in the middle.
+
+<Explain level={3} title="What just happened">
+  The same 300 measurements drew three different pictures, so the bin width is a choice
+  you make. The two humps are two kinds of customers mixed in one list: children, who need
+  small sizes, and adults, who need large ones. The mean (the triangle) lands between the
+  humps, where hardly any customer actually is. A shirt cut for the average chest would
+  fit almost nobody.
+</Explain>
+
+## 2. The bell curve
+
+<Explain level={3} title="The idea">
+  Take the heights of adult men in a town. Most are close to the average, say 165 cm. A
+  few are much shorter or taller, and the further from average, the fewer there are. Draw
+  it and you get a bell. Two numbers describe it: the **mean**, the center (165 cm), and
+  the **standard deviation**, the typical distance from the center (about 7 cm). Below is
+  that bell. **Area = share of men.**
+</Explain>
+
+<BellCurve client:visible />
+
+**Try this**
+
+- Press **Tight** (SD 3 cm). Almost everyone is the same height, like soldiers picked for a
+  parade. Press **Wide** (SD 12 cm). Heights are very mixed, like a town with many children
+  and adults together.
+- Move **Center** to 160, then 175. It is a different town, but the bell has the same shape.
+  Only its position changes.
+- Put the handles at 158 and 172 cm, one SD either side of 165. About 68% of men, roughly
+  2 in 3, fall between them.
+- Turn on **Show 1,000 real men**. The bars are real men. The curve is their smooth outline.
+
+<Explain level={3} title="What just happened">
+  The mean only decides where the bell sits. The standard deviation decides how wide it
+  is: a narrow bell means the men are alike in height, a wide bell means they differ.
+  Because the area is the share of men, you can read off "how many men are between 158 and
+  172 cm" just by shading that range. The two tails are the shorter and taller men, and
+  they are small.
+</Explain>
+
+<MathDetails summary="The math: the bell curve">
+
+$$
+f(x) = \frac{1}{\sigma\sqrt{2\pi}}\;e^{-\frac{(x-\mu)^2}{2\sigma^2}}
+$$
+
+- $\mu$ is the mean: the **Center** slider and the triangle. Changing it slides the curve left or right.
+- $\sigma$ is the standard deviation: the **Spread** slider. Larger $\sigma$ means a wider, flatter bell.
+- The share between two handles is the area under $f$ between them.
+
+</MathDetails>
+
+## 3. The 68-95-99.7 rule
+
+<Explain level={3} title="The idea">
+  In a class where the average mark is 60 and the standard deviation is 10, about two in
+  three students score between 50 and 70. Nearly all score between 30 and 90. A student
+  with 80 is **2 standard deviations** above average, and only about 1 in 44 students do
+  better. This is the 68-95-99.7 rule: bands 1, 2 and 3 standard deviations wide around
+  the average hold about 68%, 95% and 99.7% of a bell-shaped dataset. Anything beyond is
+  rare.
+</Explain>
+
+<EmpiricalRule client:visible />
+
+**Try this**
+
+- Switch on the 1, 2 and 3 SD bands one by one. The bands cover marks 50 to 70, 40 to 80
+  and 30 to 90.
+- Drag the student's mark to 80, then to 90. Each step out makes the shaded tail much
+  smaller: 80 beats all but 1 in 44 students, 90 beats all but about 1 in 740.
+- Drag it to 40. A mark 2 SD below average is just as rare as 80 is above it.
+
+<Misconception>
+  Unusual does not mean wrong. A few values beyond 3 SD are normal in big datasets.
+</Misconception>
+
+## 4. Z-scores: comparing unlike things
+
+<Explain level={3} title="The idea">
+  Ravi scores 85 in Maths, where the class average is 60 and the SD is 15. Meena scores 70
+  in English, where the average is 55 and the SD is 5. Who did better? Raw marks cannot
+  say, because the two subjects spread differently. Ravi is (85 − 60) ÷ 15 = 1.7 SDs above
+  average. Meena is (70 − 55) ÷ 5 = 3.0 SDs above. Meena's result is far rarer. That
+  number is the **z-score**. Below are both classes, with a slider for each mark.
+</Explain>
+
+<ZScoreCompare client:visible />
+
+**Try this**
+
+- Start with **Ravi and Meena**. Compare the two z-scores and the "beat this share of the
+  class" cards. Meena beats almost everyone; Ravi beats about 95%.
+- Press **Same mark, 70 in both**. The same 70 is only +0.7 in Maths but +3.0 in English.
+- Drag the English slider from 55 to 65. Ten marks barely matter in Maths, but in English
+  they carry you from average to the very top.
+
+<Explain level={3} title="What just happened">
+  English marks sit close together (SD 5), so 70 stands far out. Maths marks are spread
+  wide (SD 15), so 85 is good but not unusual. A z-score counts the gap from the class
+  average in "typical distances", so marks from different subjects, or scores and rupees,
+  share one scale. It works here because both classes are bell-shaped. Not every dataset
+  is: the next section shows one.
+</Explain>
+
+<MathDetails summary="The math: z-score">
+
+$$
+z = \frac{x - \text{mean}}{\text{SD}}
+$$
+
+- $x - \text{mean}$ is how far the mark sits from the class average: the gap between the dashed line and the triangle.
+- Dividing by the SD counts that gap in "typical distances", so Maths and English share one axis.
+- Ravi: $z = (85-60)/15 \approx 1.7$. Meena: $z = (70-55)/5 = 3.0$.
+
+</MathDetails>
+
+## 5. Not everything is bell-shaped
+
+<Explain level={3} title="The idea">
+  In a class of ten kids, nine get ₹30 a week in pocket money and one gets ₹300. The class
+  average is ₹57, yet nine of the ten get far less. Money behaves like this: most amounts
+  are small and a few are huge, which gives a long tail to the right. The fix is a
+  **log**: it counts in multiples, so ₹30, ₹60 and ₹120 become equal steps. The ₹300 kid
+  is then only a few steps away, not ten times further.
+</Explain>
+
+<LogTransform client:visible />
+
+**Try this**
+
+- Press **Take the log**. The long tail folds into a bell, and the mean and median meet.
+- Watch the coral ticks. They mark kids far above the class average, and most of them
+  disappear.
+- Switch to **Exam marks**. They were already bell-shaped, so squashing changes little.
+
+<Explain level={3} title="What just happened">
+  Many "outliers" were never strange kids. They were just the far end of a long tail,
+  because pocket money grows in multiples, not in equal steps. After the log, equal steps
+  mean equal multiples, so the data is balanced and the mean, median and SD describe it
+  fairly again.
+</Explain>
+
+<Misconception>
+  A log changes what a step means: equal steps become equal multiples. Use it when ratios
+  matter more than amounts.
+</Misconception>
+
+<MathDetails summary="The math: squashing with a log">
+
+$$
+x' = \frac{x^{\lambda} - 1}{\lambda} \qquad\text{and}\qquad x' = \ln x \;\text{ when } \lambda = 0
+$$
+
+- $\ln x$ is the natural log: it turns "times 2" into "plus 0.69", so multiples become equal steps.
+- The slider is $\lambda$: 1 leaves the data as it was (just shifted), 0 is the full log, and values in between squash part of the way.
+- Only positive values can be logged. Zero or negative values are left out and counted.
+
+</MathDetails>
+
+## In practice
+
+<InTheWild>
+
+- Standardize features (z-scores) before scale-sensitive models such as regularized regression or k-means.
+- Check a feature's shape before trusting its mean and SD; skewed features need medians or a log.
+- Flag outliers by z-score only after logging skewed data, then look at them before deleting.
+- Default rates and losses are not bell-shaped; loss distributions have heavy tails, so normal tail estimates understate risk.
+- Bin edges reshape what you see, and the same choice drives WoE ([see WoE and IV](/concepts/woe-iv/)).
+- Tree models do not need normal inputs; transforms matter most for linear models and scorecards.
+
+</InTheWild>
+
+<RulesOfThumb level={3} title="Which summary to use?">
+
+| The shape looks like | Use                          |
+| -------------------- | ---------------------------- |
+| a bell               | mean and SD                  |
+| a long right tail    | median and IQR, or log first |
+| two humps            | look for two groups          |
+
+</RulesOfThumb>
+
+Coming next: Sampling and the central limit theorem.

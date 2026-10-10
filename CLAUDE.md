@@ -185,9 +185,10 @@ Three MVP concepts first, then one new concept every 2–3 weeks. The credit-ris
 | Decision tree splits | models | Next | Click to split a 2D dataset; impurity drops | Rule-based policy vs model |
 | k-means | models | Next | Step through assign / update iterations | Customer segments |
 | Cross-validation | evaluation | Next | Folds sliding across the data | Out-of-time validation |
-| Central limit theorem | statistics | Next | Sample means from skewed data forming a bell | Portfolio averages |
+| Sampling and the central limit theorem | statistics | Planned | Sample means from skewed data forming a bell | Portfolio averages |
 | Averages and spread (mean, median, mode, SD, quartiles) | statistics | **Done** | Dots on a number line; one outlier dragging the mean; two groups with the same mean and different spread | Median ticket size, weighted interest rate, spread by segment |
 | Correlation (Pearson and Spearman) | statistics | **Done** | Values vs ranks; one outlier faking r; twin features splitting betas | Spearman for skewed bureau and income variables; dedupe before scorecards |
+| Distributions and the bell curve | statistics | **Done** | Bin-width histogram; bell curve with draggable range; 68-95-99.7 bands; z-scores on one axis; log squashing a long tail | Bin edges drive WoE; standardizing features; skewed turnover vs bell-shaped bureau score |
 | KS, AUC and Gini | credit-risk | **Done** | Two crowds; cumulative curves with the max gap (KS); random-pair AUC; ROC area to Gini; sample wobble on the real scorecard | Scorecard acceptance metrics; ranking is not calibration; bands are conventions |
 | WoE and IV | credit-risk | **Done** | Drag bin edges; WoE bars and IV update; noise feature gaining IV with more bins | Scorecard binning; leakage shows up as IV above 0.5 |
 | From WoE to a scorecard | credit-risk | **Done** | Evidence waterfall, fitted weights, odds-to-points ladder, applicant scorecard with reason codes, cutoff on score histograms | PD scorecard build; reason codes for declines; cutoff trade-off |
@@ -196,89 +197,3 @@ Three MVP concepts first, then one new concept every 2–3 weeks. The credit-ris
 | Class imbalance | credit-risk | Lending track | Accuracy vs recall at a 3% default rate; class weights vs SMOTE | Rare defaults |
 | Cost-sensitive threshold | credit-risk | Lending track | Profit curve from a cost matrix | Loss on default vs margin |
 
-## First concept spec: learning rate
-
-The first build target is `LearningRateDemo`: a ball takes gradient-descent steps on a loss curve, and the learning-rate slider decides whether it crawls, converges, oscillates, or diverges.
-
-**Widget A — 1D loss curve (the core)**
-
-- Loss: `L(x) = (x − 2)² + 1` on x ∈ \[−3, 7\]. Gradient: `2(x − 2)`.
-- Start point x₀ = −2, draggable along the curve.
-- Learning-rate slider, log scale, η from 0.01 to 1.2, default 0.1.
-- Controls: Play / Pause, Step, Reset, step-speed toggle (slow / fast).
-- Each step draws a dot on the curve and an arrow from the previous dot; older dots fade.
-- A side panel shows: step count, current x, current loss, and a status label.
-- Status rules for this quadratic: η < 0.5 = "Converging smoothly"; η = 0.5 = "Lands on the minimum in one step"; 0.5 < η < 1 = "Bouncing but converging"; η = 1 = "Stuck bouncing forever"; η > 1 = "Diverging". Stop after 50 steps or when |x| exceeds the plot.
-- A small loss-vs-step line chart under the main curve, so readers see the same behavior as a training curve.
-
-**Widget B — compare three learning rates (below Layer 1)**
-
-- Three balls on the same curve with η = 0.05, 0.4, 0.95, colored and labeled, stepping in lockstep.
-- Teaches that "too small" is slow and "too big" is noisy, at a glance.
-
-**Widget C — 2D contour (Layer 3, optional for v1)**
-
-- Elongated bowl `L(x, y) = x² + 10y²` drawn as contours on Canvas.
-- Step trail shows zig-zagging across the narrow direction as η grows; sets up the feature-scaling and momentum pages.
-
-**Page copy (draft)**
-
-- Hook: "Why does my training loss explode when I turn the learning rate up?"
-- Predict: "If you double the learning rate from 0.4 to 0.8, the ball will… reach the bottom twice as fast / overshoot and bounce / fly off." (Answer: overshoot and bounce.)
-- Try this: find the one learning rate that lands in a single step; find the smallest value that diverges.
-- What just happened: each step moves by η × slope. Near the bottom the slope is small, so small η crawls; large η overshoots the minimum and lands where the slope is steeper on the other side.
-- In the wild: in XGBoost, `eta` shrinks each tree's contribution. Lower `eta` (0.02–0.05) with more trees usually generalizes better on credit data than 0.3 with few trees, at the cost of training time.
-- Misconception: "A higher learning rate always trains faster." Past the stable range it never converges at all.
-
-**Acceptance criteria**
-
-- [ ] Slider changes redraw instantly; animation holds 60 fps on a mid-range phone
-- [ ] All five status labels reachable and correct
-- [ ] Works with keyboard only and at 375 px wide
-- [ ] `gd.ts` has unit tests for the step function and status classification
-- [ ] Page passes Lighthouse performance ≥ 95
-
-## Milestones, workflow, and using this with Claude Code
-
-At about 30 minutes a day plus weekends (5–6 hours a week), the first public concept ships in week 3 and the MVP in week 10.
-
-**Milestones**
-
-1. **Weeks 1–3:** scaffold the repo, build `ConceptLayout` and the UI kit, ship the learning-rate page, deploy to Cloudflare Pages.
-2. **Weeks 4–8:** bias–variance and threshold/precision–recall pages.
-3. **Weeks 9–10:** home page with a concept map by track, dark mode polish, test with 5–10 colleagues without giving instructions.
-4. **After that:** one concept every 2–3 weeks; each shared on LinkedIn as a short screen recording.
-
-**Weekly rhythm**
-
-- Weekdays (30 min): one small GitHub issue — copy for one layer, a styling fix, one test, one bug.
-- Weekends: build or extend a widget.
-- Backlog lives in GitHub Issues, labeled `concept`, `widget`, `copy`, `infra`, so every session starts by picking one.
-
-**Using this brief with Claude Code**
-
-1. Export this doc as Markdown and save it at the repo root as `CLAUDE.md` (Claude Code reads it automatically each session).
-2. Start Claude Code in an empty folder and give it the first task below.
-3. Work one milestone at a time. Ask it to plan first, then build, then run `npm run build` and the tests before finishing.
-4. When a decision changes (stack, template, conventions), update `CLAUDE.md` so future sessions stay consistent.
-
-**First prompt for Claude Code**
-
-```text
-Read CLAUDE.md. Scaffold the project as described: Astro (static output) with React, MDX,
-Tailwind, KaTeX (remark-math + rehype-katex), TypeScript strict, Vitest, ESLint and Prettier.
-Create the folder structure, global.css with light/dark color tokens, ConceptLayout.astro,
-the UI kit (Slider with log option, Toggle, Button, PredictPrompt, MathDetails, Callout),
-lib/random.ts (seeded mulberry32), and a placeholder learning-rate.mdx that renders.
-Add a GitHub Actions workflow that runs build and tests. Do not build the widget yet.
-Plan first, then implement, then run the build and tests and fix any errors.
-```
-
-**Second prompt**
-
-```text
-Implement LearningRateDemo (Widget A) per the "First concept spec" in CLAUDE.md:
-pure math in gd.ts with unit tests, Canvas rendering, rAF animation that pauses off screen,
-log-scale learning-rate slider, status labels, and the loss-vs-step mini chart.
-Then fill learning-rate.mdx with the three layers using the draft copy.
-```
