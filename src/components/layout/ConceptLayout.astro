@@ -1,5 +1,7 @@
 ---
 import '../../styles/global.css';
+import ThemeInit from '../ui/ThemeInit.astro';
+import ThemeToggle from '../ui/ThemeToggle.astro';
 
 interface Link {
   slug: string;
@@ -32,12 +34,14 @@ const card = share ?? summary;
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={card} />
+    <ThemeInit />
   </head>
   <body>
     <header class="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 text-sm">
       <a href="/" class="font-semibold">
         Intuitive Data Science
       </a>
+      <ThemeToggle />
     </header>
 
     <main class="mx-auto max-w-3xl px-4 pb-16">

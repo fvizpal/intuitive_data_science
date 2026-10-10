@@ -1,0 +1,9 @@
+<script is:inline>
+  // Apply a saved choice before first paint; no saved choice means follow the OS.
+  try {
+    const t = localStorage.getItem('ids:theme');
+    if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+  } catch {
+    /* ignore */
+  }
+</script>
