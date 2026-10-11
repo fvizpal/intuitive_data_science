@@ -69,19 +69,52 @@ Some textbooks use $\ln(\%\mathrm{bad}_i / \%\mathrm{good}_i)$ instead, which fl
 
 ## Information value
 
-Add up each bin's evidence, weighted by how different its good and bad shares are. One number per feature.
+WoE tells you how **one bin** leans. But a feature has several bins, and you want one answer: **how useful is this feature overall at separating good customers from bad ones?** That number is the **information value (IV)**. Think of it as a usefulness score for the feature.
+
+A bin should count for more when two things are true:
+
+1. **It leans clearly.** Its WoE is far from 0, so it is clearly safer or clearly riskier.
+2. **It holds a lot of people who are sorted.** There is a big **gap** between its share of good customers and its share of bad ones. A bin with 2% of everyone cannot teach you much, however strongly it leans.
+
+So each bin **contributes** its gap multiplied by its lean. Add up the contributions of all bins and you have the feature's IV.
+
+<Callout title="A tiny example">
+
+Bin A holds 40% of the good customers but only 10% of the bad ones. The gap is 30 points and it leans strongly safer (ln 4 = +1.39), so it contributes 0.30 × 1.39 = **0.42**.
+
+Bin B holds 20% of the goods and 20% of the bads. There is no gap and it leans nowhere, so it contributes **0**: it tells you nothing.
+
+A bin that leans riskier (negative lean) has a negative gap too, and a negative times a negative is positive. So **every bin contributes zero or more**: a risky bin is just as informative as a safe one.
+
+</Callout>
 
 <FeatureRanking client:visible />
 
+**How to read it.**
+
+- **Top chart:** one bar for one feature, cut into pieces. Each piece is one bin's contribution, and the whole bar is the feature's IV. Under it, each bin shows its gap × lean = contribution, so you can check the sum yourself.
+- **Bottom chart:** every feature's IV on one scale. A longer bar means a more useful feature. The shaded bands are the conventional strength labels from the table below.
+
+**Try this**
+
+- Switch features in the top chart. Which bins make up most of the bar? Are they the biggest bins, or the ones that lean hardest?
+- Turn on **Add a feature that peeks at the future**. Why is its bar so far to the right?
+
+<Explain level={3} title="What just happened">
+
+A feature has a high IV when its bins split good and bad customers into **very different groups**: some bins full of goods, others full of bads. A feature whose bins all look like the overall portfolio has an IV near 0, and is no use for telling customers apart.
+
+</Explain>
+
 <RulesOfThumb level={3} title="How strong is an IV?">
 
-| IV          | Reading                       |
-| ----------- | ----------------------------- |
-| below 0.02  | Not useful                    |
-| 0.02 to 0.1 | Weak                          |
-| 0.1 to 0.3  | Medium                        |
-| 0.3 to 0.5  | Strong                        |
-| above 0.5   | Suspicious: check for leakage |
+| IV          | Reading                       | What people do with it      |
+| ----------- | ----------------------------- | --------------------------- |
+| below 0.02  | Not useful                    | Drop it                     |
+| 0.02 to 0.1 | Weak                          | Usually drop, or combine it |
+| 0.1 to 0.3  | Medium                        | Keep                        |
+| 0.3 to 0.5  | Strong                        | Keep                        |
+| above 0.5   | Suspicious: check for leakage | Investigate before using    |
 
 These cutoffs are a convention, not a law.
 
@@ -93,10 +126,10 @@ $$
 \mathrm{IV} = \sum_i \left(\%\mathrm{good}_i - \%\mathrm{bad}_i\right)\,\mathrm{WoE}_i
 $$
 
-- $\mathrm{WoE}_i$ is the bar from the last widget: which way the bin leans.
-- $\%\mathrm{good}_i - \%\mathrm{bad}_i$ is how different the two shares are. A bin where they match adds nothing.
-- Both factors have the same sign, so every bin adds zero or more. A coral bin helps just as much as a teal one.
-- The sum is the stacked bar: the feature's one-number score.
+- $\%\mathrm{good}_i - \%\mathrm{bad}_i$ is the **gap** in the widget: how different the bin's share of goods and share of bads are. A bin where they match adds nothing.
+- $\mathrm{WoE}_i$ is the **lean**: which way, and how strongly, the bin points.
+- Their product is the bin's **contribution**. Both factors have the same sign, so it is never negative.
+- The sum over all bins is the whole stacked bar: the feature's IV.
 
 </MathDetails>
 

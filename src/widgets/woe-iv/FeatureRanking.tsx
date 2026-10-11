@@ -45,6 +45,9 @@ const BANDS: { name: IvStrength; from: number; to: number }[] = [
 ];
 
 const iv3 = (v: number) => (Number.isFinite(v) ? v.toFixed(3) : '—');
+/** Gap between two shares, in percentage points: +19.5, −3.2. */
+const pts = (v: number) =>
+  Number.isFinite(v) ? `${v < 0 ? '−' : '+'}${Math.abs(v * 100).toFixed(1)}` : '—';
 
 function StackedIv({ feature }: { feature: RankedKey }) {
   const { seed } = usePage();
@@ -143,17 +146,17 @@ function StackedIv({ feature }: { feature: RankedKey }) {
           .map((b) => {
             const r = woeReading(b.woe);
             return (
-              <li
-                key={b.index}
-                className="flex justify-between gap-2 border-b border-grid pb-0.5"
-              >
-                <span>{binLabel(meta, edges, b.index)}</span>
-                <span className="font-mono">
-                  <span style={{ color: READING_COLOR[r] }}>
-                    {READING_GLYPH[r]} WoE {signed(b.woe)}
-                  </span>{' '}
-                  → adds {iv3(b.ivContribution)}
-                </span>
+              <li key={b.index} className="border-b border-grid pb-1">
+                <div className="flex justify-between gap-2">
+                  <span className="font-semibold">{binLabel(meta, edges, b.index)}</span>
+                  <span className="font-mono" style={{ color: READING_COLOR[r] }}>
+                    {READING_GLYPH[r]} leans {signed(b.woe)}
+                  </span>
+                </div>
+                <div className="font-mono text-muted">
+                  gap {pts(b.pctGood - b.pctBad)} × lean {signed(b.woe)} ={' '}
+                  <strong className="text-ink">{iv3(b.ivContribution)}</strong>
+                </div>
               </li>
             );
           })}
