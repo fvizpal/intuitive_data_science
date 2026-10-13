@@ -192,7 +192,7 @@ Three MVP concepts first, then one new concept every 2–3 weeks. The credit-ris
 | KS, AUC and Gini | credit-risk | **Done** | Two crowds; cumulative curves with the max gap (KS); random-pair AUC; ROC area to Gini; sample wobble on the real scorecard | Scorecard acceptance metrics; ranking is not calibration; bands are conventions |
 | WoE and IV | credit-risk | **Done** | Drag bin edges; WoE bars and IV update; noise feature gaining IV with more bins | Scorecard binning; leakage shows up as IV above 0.5 |
 | From WoE to a scorecard | credit-risk | **Done** | Evidence waterfall, fitted weights, odds-to-points ladder, applicant scorecard with reason codes, cutoff on score histograms | PD scorecard build; reason codes for declines; cutoff trade-off |
-| PSI and drift | credit-risk | Planned | Shift the population; PSI gauge moves | Monitoring after launch |
+| PSI and drift | credit-risk | **Done** | Two populations; PSI by slice; noise vs real change; binning matters; drift is not damage on the real scorecard | Monitoring after launch; PSI watches inputs, Gini needs matured cohorts |
 | Calibration | credit-risk | Lending track | Reliability curve; apply Platt / isotonic | PD used for pricing |
 | Class imbalance | credit-risk | Lending track | Accuracy vs recall at a 3% default rate; class weights vs SMOTE | Rare defaults |
 | Cost-sensitive threshold | credit-risk | Lending track | Profit curve from a cost matrix | Loss on default vs margin |

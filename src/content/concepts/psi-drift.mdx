@@ -1,0 +1,170 @@
+---
+title: PSI and drift
+slug: psi-drift
+track: credit-risk
+level: intermediate
+minutes: 11
+prerequisites: [ks-auc-gini]
+summary: The model worked at launch. Has the population changed since? PSI measures it, and tells you less than you might think.
+---
+
+import { PredictDrift } from '../../widgets/drift/PredictDrift';
+import { DriftLab } from '../../widgets/drift/DriftLab';
+import { PSIBuilder } from '../../widgets/drift/PSIBuilder';
+import { NoiseOnly } from '../../widgets/drift/NoiseOnly';
+import { BinningMatters } from '../../widgets/drift/BinningMatters';
+import { DriftIsNotDamage } from '../../widgets/drift/DriftIsNotDamage';
+
+<Hook>The model worked at launch. How do I know it still does?</Hook>
+
+A **score** is a number the model gives each applicant. Higher means safer. The model learned what scores look like from past applicants, so it works best when today's applicants look like those past ones.
+
+Two names to keep straight on this page. **Build time** is the group of applicants the model was built on. **Today** is the group you are checking now.
+
+<PredictDrift client:visible />
+
+## 1. Two groups of applicants
+
+Applicants don't stay the same. A campaign brings in a new crowd, a policy changes who applies, or the economy turns. Before you can measure that, you need to see it.
+
+Think of a shoe shop that orders stock by size, using last year's customers. This year a different crowd walks in. The shelves are full of sizes few people need, and the sizes people want are sold out. The shop didn't break. It just stopped matching its customers. Your model's shelves are the score ranges it learned from.
+
+**Try this.** Drag the first slider left and watch the solid bars slide away from the outlined ones. Then press "Wider spread" and notice that the average barely moves, yet the shapes still differ.
+
+<DriftLab client:visible />
+
+**So:** the real question is how different these two shapes are, in one number.
+
+## 2. PSI, slice by slice
+
+You can see the two shapes differ. How do you turn that into one number for a dashboard?
+
+Start by cutting the score line into 10 slices. You cut them so that each slice held exactly 10% of the build-time applicants, like ten queues of equal length. We call these slices **bins**.
+
+If nothing has changed, each slice should still hold about 10% of today's applicants. If today's crowd has moved, some slices fill up and others empty out. **PSI** (the population stability index) looks at each slice, asks how far today's share drifted from build time, and adds the answers up. A slice that doubled counts for more than one that barely moved.
+
+**Try this.** Click any slice to see its working in plain numbers. Then drag the shift slider and watch which slices grow. Press "Swap build time and today" and see what happens to the total.
+
+<PSIBuilder client:visible />
+
+**So:** PSI adds up how far each slice drifted. People watch two lines on it: 0.1 and 0.25, which are conventions, not laws.
+
+<Misconception>
+  A big PSI does not mean the model got worse. It means the population changed. Whether
+  that hurts is a separate question (see the last section).
+</Misconception>
+
+<MathDetails summary="The math: PSI">
+
+$$
+\mathrm{PSI} = \sum_{i=1}^{10} \bigl(a_i - e_i\bigr)\,\ln\frac{a_i}{e_i}
+$$
+
+- $e_i$ is the build-time share of slice $i$ (the outlined column, 10% by design). "e" is for expected.
+- $a_i$ is today's share of slice $i$ (the solid column). "a" is for actual.
+- Each term is one orange bar. Both factors have the same sign, so every term is zero or positive, and the total is never negative.
+- Swap $e$ and $a$ and every term stays the same. That is why the Swap button changes nothing.
+- It has the same shape as IV on the WoE page. IV compares goods against bads; PSI compares today against build time.
+- Rule of thumb: if the average moves by $d$ standard deviations, PSI is roughly $d^2$. A third of a standard deviation gives about 0.11, and half gives about 0.25. That is where the two conventional lines come from, in plain terms.
+- **Empty slices.** $\ln(0)$ is not a number, so any share below $0.0001$ is raised to $0.0001$ first. The shares are not renormalized afterwards.
+
+</MathDetails>
+
+## 3. Real change or noise?
+
+Your PSI came out at 0.12 this month. Did your applicants change, or did you just have an unlucky month?
+
+Take a small month, say 100 loans. With 10 slices, each slice should get about 10 loans. But applicants arrive at random, so one slice might get 14 and another 7, even though nothing about your applicants changed. That is plain luck, like flipping a coin 10 times and not getting exactly 5 heads. PSI cannot tell luck from real change. It adds the swings up and reports a small number above zero.
+
+Now take a big month, 5,000 loans. Each slice expects about 500. Getting 520 or 480 is a tiny swing, so PSI stays close to zero. More loans means less luck.
+
+There is a handy rule for how big the luck is. When nothing has changed, PSI is typically about **9 divided by the number of loans** (9 is the 10 slices minus 1). For 100 loans that is about 0.09, almost at the 0.1 line. For 5,000 loans it is about 0.002.
+
+One new word before the widget. A **false alarm** is a month where nothing changed, yet PSI still reached 0.1 or more.
+
+**Try this.**
+
+1. Leave the loans slider at 500 and press "Draw 40 new months". Every dot is a month in which nothing changed. Count how many land in the shaded alarm zone.
+2. Drag the slider to 100. The dots spread out and many cross into the alarm zone.
+3. Drag it to 5,000. The dots pile up near zero and the false alarms disappear.
+4. Now switch on the real drop and compare the diamonds with the circles, first at 100 loans and then at 5,000.
+
+<NoiseOnly client:visible />
+
+**So:** read PSI together with how many loans it is based on.
+
+<Misconception>
+  PSI above 0.1 always means the population changed. At low volume, noise alone can push
+  it there.
+</Misconception>
+
+## 4. Slices change the answer
+
+A colleague runs PSI on the same data and gets a different number. Who is wrong?
+
+Often neither of you. PSI depends on how you cut the score line, and there is more than one sensible way. **Equal-count** slices are cut so each one held the same share of build-time applicants, like the deciles you have used so far. **Equal-width** slices cover the same stretch of score each, like the markings on a ruler.
+
+More slices can catch finer changes, but each one holds fewer applicants, so the result gets jumpier. Fewer slices are steadier but can smooth over a detail. Whichever you pick, cut the slices once from build-time data and reuse them every month. Change them and the number changes, even if nobody applied differently.
+
+**Try this.** Click each of the six boxes and compare the numbers. Then pick "20 slices" under equal-width and look for the slices marked ▲. They sit in the thin tails, where a few applicants can swing the result.
+
+<BinningMatters client:visible />
+
+Bell-shaped scores keep these differences fairly small. With skewed data, such as monthly turnover, equal-width slices can leave almost everyone in one slice, and PSI goes nearly blind. The tests behind this page check exactly that.
+
+**So:** compare PSI only across months that use the same slices.
+
+## 5. Drift is not damage
+
+PSI is high. Is my model broken?
+
+Not necessarily. To see why, picture the score cut into ten **bands**, from the lowest scores to the highest. A score works when the riskiest band has a high default rate and the safest band has a low one, like a staircase. Two different things can change:
+
+- **Who is in each band.** More applicants may land in the risky bands. PSI measures this: it only counts people per band.
+- **The default rate inside each band.** The riskiest band might stop being risky. **Gini** measures how steep the staircase is, so it uses these rates. A flat staircase means the score has stopped predicting, perhaps because a policy changed or a new fraud pattern appeared.
+
+If the default rate inside every band stays the same, Gini cannot get worse, however many people move between bands. The score only breaks when those rates change. PSI cannot see that, because it never looks at defaults.
+
+This widget uses the real scorecard from the earlier pages, scoring 20,000 fresh applicants. Gini runs from 0 (a coin flip) to 1 (perfect).
+
+**Try this.** Switch on "Applicants change". Watch the bars in chart 1 move and PSI jump, while the bars in chart 2 stay put and Gini holds. Switch it off, then switch on "Default rates inside the bands change". Now chart 1 stays put and PSI stays near zero, but the staircase in chart 2 goes flat and Gini collapses. Then try both together.
+
+<DriftIsNotDamage client:visible />
+
+<Callout title="Why teams watch PSI first">
+  In lending, defaults take months to show up. PSI is available today; Gini has to wait.
+  That is why teams watch PSI first and confirm with matured cohorts later.
+</Callout>
+
+**So:** a high PSI says the population changed. Only Gini on matured loans says whether the score still works.
+
+<Misconception>
+  A low PSI means the model is fine. Not so: the score can lose its power while the
+  population looks the same.
+</Misconception>
+
+## 6. In practice
+
+<InTheWild>
+
+- PSI watches inputs (the score or a feature), not accuracy.
+- Cut the slices from the development sample and reuse them every month.
+- 0.1 and 0.25 are conventions. Read them with your monthly volume: noise alone is roughly the number of slices minus 1, divided by the number of loans.
+- Run PSI on the score first, then on the key features to find what moved. Feature-level PSI is often called CSI.
+- Seasons, campaigns and policy changes cause drift. Compare with the same month last year before you panic.
+- Confirm performance on matured cohorts (Gini and KS by vintage) once outcomes arrive.
+- Missing values and new categories get their own slice.
+
+</InTheWild>
+
+<RulesOfThumb level={3} title="What to do with a PSI">
+
+| PSI               | Reading           | What teams do                                            |
+| ----------------- | ----------------- | -------------------------------------------------------- |
+| below 0.1         | stable            | keep monitoring                                          |
+| 0.1 to under 0.25 | investigate       | find the drivers; check volume and seasonality           |
+| 0.25 and above    | significant shift | investigate now; consider recalibration or redevelopment |
+
+These are conventions, not laws. Teams set their own.
+
+</RulesOfThumb>

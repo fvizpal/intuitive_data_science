@@ -9,6 +9,7 @@ const ORDER = [
   'woe-iv',
   'woe-to-scorecard',
   'ks-auc-gini',
+  'psi-drift',
 ];
 
 export async function getOrderedConcepts() {
