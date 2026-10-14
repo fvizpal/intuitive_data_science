@@ -5,6 +5,7 @@ const ORDER = [
   'averages-and-spread',
   'correlation',
   'distributions',
+  'sampling-clt',
   'learning-rate',
   'woe-iv',
   'woe-to-scorecard',

@@ -1,0 +1,129 @@
+---
+title: Sampling and the central limit theorem
+slug: sampling-clt
+track: statistics
+level: beginner
+minutes: 9
+prerequisites: [distributions]
+summary: Every sample gives a slightly different average. Those averages form a bell curve, and bigger samples make it narrower.
+---
+
+import { PredictSE } from '../../widgets/sampling/PredictSE';
+import { DrawSamples } from '../../widgets/sampling/DrawSamples';
+import { SamplingDistribution } from '../../widgets/sampling/SamplingDistribution';
+import { SampleSize } from '../../widgets/sampling/SampleSize';
+import { CLTMachine } from '../../widgets/sampling/CLTMachine';
+import { WhereItStruggles } from '../../widgets/sampling/WhereItStruggles';
+
+<Hook>Ask 100 people about their commute. Would another 100 give the same average?</Hook>
+
+A city has 10,000 commuters. That is the **population**: everyone you could ask. You ask a few of them. Those few are a **sample**, and their average is the **sample average**.
+
+<PredictSE client:visible />
+
+## 1. Every sample is different
+
+**Would a different sample give the same average?**
+
+A sample is a small window onto everyone. A different window shows a different average. Below, the grey bars are everyone's commute times in minutes and the dots are the people you picked.
+
+**Try this:** press **Draw a sample** a few times. Does any pair give the same average?
+
+<DrawSamples client:visible />
+
+**So:** a sample average is close to the true average, but never exactly it, and it changes every time.
+
+## 2. Averages pile up
+
+**What happens when you collect many sample averages?**
+
+Treat each sample average as one dot. Take sample after sample, 25 people each, and stack the dots by value.
+
+**Try this:** press **Draw 10** a few times, then **Draw 1,000**. Watch where the pile forms.
+
+<SamplingDistribution client:visible />
+
+**So:** sample averages cluster around the true average, in a bell shape, even though the commute times themselves are not bell-shaped.
+
+## 3. Bigger samples, narrower bell
+
+**How much steadier does an average get with more people?**
+
+More people in each sample means steadier averages, so the pile gets narrower. The width of the pile is the spread of the averages. For comparison, everyone's commutes spread about 17 minutes (their standard deviation).
+
+**Try this:** set 100 people, then press **Jump to 4 times as many people**. Compare the two spreads.
+
+<SampleSize client:visible />
+
+<Misconception>
+  "To halve the wobble, double the sample." No: you need four times as many people.
+</Misconception>
+
+**So:** the spread of the average is the spread of the data divided by the square root of the sample size.
+
+<MathDetails summary="The math: standard error">
+
+$$
+\text{SE} = \frac{\sigma}{\sqrt{n}}
+$$
+
+- $\sigma$ is the spread of everyone (about 17 minutes here). It does not change when you move the slider.
+- $n$ is **People in each sample**. Larger $n$ divides $\sigma$ by a larger number, so the pile narrows.
+- Four times as many people: $\sqrt{4n} = 2\sqrt{n}$, so the standard error is exactly halved.
+- The central limit theorem says more: averages of many independent draws look more and more like a bell, centred on the true average, with this spread.
+- Each draw is made **with replacement** (a person can be picked twice), so draws are independent and the formula is exact. $\sigma$ divides by the population size because everyone is a fixed list; the spread of a drawn sample divides by $n-1$.
+
+</MathDetails>
+
+## 4. Any shape becomes a bell
+
+**Does the trick work when the data has another shape?**
+
+The commute times were skewed. A club batter's scores pile up at 0 and trail off. A die is flat. A café gets a lunch crowd and a dinner crowd.
+
+**Try this:** pick **Dice** and press **Play**. Then try **Café**. Watch two humps melt into one.
+
+<CLTMachine client:visible />
+
+<Misconception>
+  "Sample averages are bell-shaped, so the data must be." No: the data keeps its own
+  shape. Only the averages become a bell.
+</Misconception>
+
+**So:** whatever the shape of the data, <b>averages of enough values form a bell. This is the central limit theorem.</b>
+
+## 5. Where it struggles
+
+**When is a sample of 30 not enough?**
+
+You may have heard "30 is enough". It holds for flat or mildly skewed data, like the last section. Two cases need far more.
+
+**Rare events.** A factory makes bulbs and 4% are faulty. A batch of 25 bulbs holds 1 faulty bulb on average, but many batches hold none, and none is the lowest a batch can go. So the share faulty piles up against zero on one side and trails off on the other. A bell would spill below zero, which is impossible. The bell fits once a batch holds about 10 faulty bulbs.
+
+**Heavy tails.** Most videos get a few thousand views. A few go viral and get millions. If your sample misses the giants, its average is low. If it catches one, its average jumps. Averages stay lopsided until each sample is large enough that most samples catch a few giants.
+
+In each panel below, a sample is one batch or one set of videos, and its average is the number plotted. Compare the bars with the dashed bell.
+
+**Try this:** in the bulbs panel, compare batches of 25 and 250. In the views panel, slide from 25 to 500 videos.
+
+<WhereItStruggles client:visible />
+
+<Misconception>
+  "A sample of 30 is always enough." That number is folklore. How many you need depends on
+  the shape: flat data settles by 30, rare events and heavy tails need far more.
+</Misconception>
+
+**So:** the more lopsided the data, the bigger the sample the bell needs.
+
+## In practice
+
+<InTheWild>
+
+- **Polls are a sample.** Asking 1,000 people gets you within about 3 points of the truth. To be twice as sure you must ask 4,000, because accuracy grows with the square root of the sample.
+- **Totals and averages look bell-shaped, single values do not.** Daily sales, ride times and marks are lopsided one by one, yet their averages are steady and symmetric.
+- **Rare things need big samples.** If 4% of items are defective, check about 250 to expect roughly 10 defects. Check 25 and you will often see none.
+- **A default rate from a few hundred loans is a small sample.** It bounces from month to month by luck alone, so do not read a change as a trend until the volume is large ([see PSI and drift](/concepts/psi-drift/)).
+- **A bigger sample cannot fix a biased one.** Survey only the people at the railway station and a million answers are still wrong. The pattern also needs picks that are random and independent.
+
+</InTheWild>
+
