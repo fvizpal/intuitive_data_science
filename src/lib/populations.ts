@@ -6,7 +6,7 @@ import { mulberry32, normal } from './random';
 
 export const POP_SIZE = 10_000;
 
-export type PopId = 'commute' | 'cricket' | 'dice' | 'cafe' | 'views' | 'bulbs';
+export type PopId = 'commute' | 'cricket' | 'dice' | 'cafe' | 'views' | 'bulbs' | 'poll';
 
 export interface PopMeta {
   id: PopId;
@@ -92,6 +92,17 @@ export const POP_META: Record<PopId, PopMeta> = {
     binWidth: 1,
     shape: 'mostly 0, 4% are 1',
   },
+  poll: {
+    id: 'poll',
+    label: 'Support the proposal',
+    what: 'one voter',
+    unit: 'yes / no',
+    unitShort: '',
+    xMin: -0.5,
+    xMax: 1.5,
+    binWidth: 1,
+    shape: '52% yes',
+  },
 };
 
 const SALT: Record<PopId, number> = {
@@ -101,6 +112,7 @@ const SALT: Record<PopId, number> = {
   cafe: 41,
   views: 53,
   bulbs: 67,
+  poll: 71,
 };
 
 const clip = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
@@ -137,8 +149,10 @@ function build(id: PopId, seed: number): number[] {
       for (let i = 0; i < POP_SIZE; i++)
         out[i] = Math.round(Math.exp(normal(rng, Math.log(2), 1.2)) * 10) / 10;
       break;
+    case 'poll':
     case 'bulbs': {
-      for (let i = 0; i < POP_SIZE; i++) out[i] = i < 400 ? 1 : 0;
+      const ones = id === 'poll' ? 5200 : 400;
+      for (let i = 0; i < POP_SIZE; i++) out[i] = i < ones ? 1 : 0;
       for (let i = POP_SIZE - 1; i > 0; i--) {
         const j = Math.floor(rng() * (i + 1));
         const t = out[i]!;
@@ -174,3 +188,30 @@ export const dice = (seed: number) => getPopulation('dice', seed);
 export const cafe = (seed: number) => getPopulation('cafe', seed);
 export const views = (seed: number) => getPopulation('views', seed);
 export const bulbs = (seed: number) => getPopulation('bulbs', seed);
+export const poll = (seed: number) => getPopulation('poll', seed);
+
+const stationCache = new WeakMap<object, number[]>();
+
+/**
+ * The biased subset for the bias demo: commuters at or below the 60th percentile of the
+ * population (the people with shorter commutes). Same input array returns the same subset.
+ */
+export function stationCommuters(pop: ArrayLike<number>): number[] {
+  const hit = stationCache.get(pop as object);
+  if (hit) return hit;
+  const n = pop.length;
+  if (n === 0) return [];
+  const sorted = Float64Array.from(pop as ArrayLike<number>).sort();
+  const pos = 0.6 * (n - 1);
+  const i = Math.floor(pos);
+  const cut =
+    sorted[i]! +
+    (pos - i) * ((sorted[Math.min(n - 1, i + 1)] ?? sorted[i]!) - sorted[i]!);
+  const out: number[] = [];
+  for (let k = 0; k < n; k++) if (pop[k]! <= cut) out.push(pop[k]!);
+  stationCache.set(pop as object, out);
+  return out;
+}
+
+export const STATION_LABEL =
+  'Only people at the train station: the 60% with shorter commutes';

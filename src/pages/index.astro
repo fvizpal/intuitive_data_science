@@ -4,12 +4,14 @@ import '../styles/global.css';
 import ThemeInit from '../components/ui/ThemeInit.astro';
 import ThemeToggle from '../components/ui/ThemeToggle.astro';
 
+import Analytics from '@vercel/analytics/astro'
+
 const TRACKS = [
   { id: 'optimization', label: 'Optimization' },
   { id: 'models', label: 'Models' },
   { id: 'evaluation', label: 'Evaluation' },
-  { id: 'statistics', label: 'Statistics' },
   { id: 'credit-risk', label: 'Credit risk' },
+  { id: 'statistics', label: 'Statistics' },
 ] as const;
 
 const concepts = await getOrderedConcepts();
@@ -30,6 +32,7 @@ const byTrack = TRACKS.map((t) => ({
     />
     <title>Intuitive Data Science</title>
     <ThemeInit />
+    <Analytics />
   </head>
   <body>
     <div class="mx-auto flex max-w-3xl justify-end px-4 pt-4">

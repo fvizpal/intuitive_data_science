@@ -6,6 +6,7 @@ const ORDER = [
   'correlation',
   'distributions',
   'sampling-clt',
+  'confidence-intervals',
   'learning-rate',
   'woe-iv',
   'woe-to-scorecard',

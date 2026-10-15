@@ -186,7 +186,8 @@ Three MVP concepts first, then one new concept every 2–3 weeks. The credit-ris
 | k-means | models | Next | Step through assign / update iterations | Customer segments |
 | Cross-validation | evaluation | Next | Folds sliding across the data | Out-of-time validation |
 | Sampling and the central limit theorem | statistics | **Done** | Sample averages piling into a bell; 4x the people halves the spread; any data shape becomes a bell; rare events and heavy tails need more | Monthly default rates on a few hundred loans wobble; polls and A/B tests |
-| Confidence intervals | statistics | Planned | Intervals around a sample average; how wide they are and what 95% means | Uncertainty around a default rate or a Gini |
+| Confidence intervals | statistics | **Done** | Intervals around a sample average; how wide they are and what 95% means | Uncertainty around a default rate or a Gini |
+| p-values and A/B tests | statistics | Planned | Is a difference real or noise? Simulated null worlds and the share of them as extreme as yours | Champion vs challenger scorecards; comparing default rates |
 | Averages and spread (mean, median, mode, SD, quartiles) | statistics | **Done** | Dots on a number line; one outlier dragging the mean; two groups with the same mean and different spread | Median ticket size, weighted interest rate, spread by segment |
 | Correlation (Pearson and Spearman) | statistics | **Done** | Values vs ranks; one outlier faking r; twin features splitting betas | Spearman for skewed bureau and income variables; dedupe before scorecards |
 | Distributions and the bell curve | statistics | **Done** | Bin-width histogram; bell curve with draggable range; 68-95-99.7 bands; z-scores on one axis; log squashing a long tail | Bin edges drive WoE; standardizing features; skewed turnover vs bell-shaped bureau score |

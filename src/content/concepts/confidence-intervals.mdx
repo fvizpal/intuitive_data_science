@@ -1,0 +1,98 @@
+---
+title: Confidence intervals
+slug: confidence-intervals
+track: statistics
+level: beginner
+minutes: 9
+prerequisites: [sampling-clt]
+summary: A sample average is a guess. An interval adds a margin, and 95% describes how often the method catches the truth.
+---
+
+import { PredictCatch } from '../../widgets/intervals/PredictCatch';
+import { MarginOfError } from '../../widgets/intervals/MarginOfError';
+import { IntervalCatcher } from '../../widgets/intervals/IntervalCatcher';
+import { WidthControls } from '../../widgets/intervals/WidthControls';
+import { ProportionIntervals } from '../../widgets/intervals/ProportionIntervals';
+import { BiasTrap } from '../../widgets/intervals/BiasTrap';
+
+<Hook>A poll says 52% support a proposal. How sure can you be?</Hook>
+
+The poll asked a sample, not everyone. Ask a different sample and you get a different number. The typical size of that wobble is the **standard error**. An interval turns one guess into a plausible range.
+
+<PredictCatch client:visible />
+
+## 1. A guess with a margin
+
+**Where does the true average plausibly sit?**
+
+In real life you see one sample and never the truth. The **confidence interval** is a range around your sample average where the truth plausibly sits. Half its width is the **margin of error**. You build it from your sample alone: how spread out your people are, shrunk by how many you asked (that is the standard error), then multiplied by about 2. For small samples the multiplier is a little bigger than 2; the page uses the exact value. The widget shows each step with your numbers.
+
+**Try this:** draw a sample. Where do you think the true average is? Then reveal it.
+
+<MarginOfError client:visible />
+
+**So:** an interval is the guess plus a margin. You cannot tell from one interval alone whether it caught the truth.
+
+## 2. Catching the truth
+
+**How often does the interval catch the truth?**
+
+Repeat the whole thing many times. Each time, draw a new sample and build its interval. Then count how many caught the truth. That share is the **coverage**. The **confidence level** is the coverage the method aims for.
+
+**Try this:** press **Draw 100** at 95%, then **Draw 1000**. Now switch to 80% and 99%.
+
+<IntervalCatcher client:visible />
+
+<Misconception>
+  "There is a 95% chance this interval contains the truth." Not quite: the 95% describes
+  the method. Once drawn, an interval either caught the truth or missed.
+</Misconception>
+
+**So:** 95% is how often the method works, not how likely one result is to be right.
+
+## 3. What sets the width
+
+**Why are some intervals wider than others?**
+
+Three things set the margin: how many people you ask, how spread out the data is, and how sure you want to be. Commute times and cricket scores spread differently, so try both.
+
+**Try this:** set 100 people, then jump to 4 times as many. Then raise the level to 99%.
+
+<WidthControls client:visible />
+
+<Misconception>
+  "A 95% interval holds 95% of the people." No: it is a range for the average. Most
+  individuals fall outside it.
+</Misconception>
+
+**So:** 4 times the data halves the margin. More confidence costs width.
+
+## 4. A bigger sample does not fix a biased one
+
+**What if the people you ask are not a fair slice of everyone?**
+
+Say you want the average commute in a city, and you phone people at 3 pm on a weekday. Who picks up? People who are already home, which mostly means people with short commutes. Those with long commutes are still on the road, so you never reach them. Your sample leans toward short commutes. That lean is called **bias**.
+
+An interval cannot see bias. It only measures the random wobble from who happened to be picked. It does not check whether you picked from the right crowd. So a biased sample gives a tight interval around the wrong number: confident and wrong.
+
+## In practice
+
+<InTheWild>
+
+- **Election polls.** The "give or take 3 points" under a poll is the margin of error from section 1. It is that small because pollsters ask about a thousand people.
+- **Scorecard metrics wobble too.** A Gini measured on a few hundred defaulters moves a lot with a different sample. Quote it with a range ([see KS, AUC and Gini](/concepts/ks-auc-gini/)).
+- **A lender only sees the people it approved.** Whether applicants it declined would have repaid is unknown, so the data is a biased slice, like the 3 pm phone calls in section 4. More approved loans make the interval tighter, not fairer.
+- **Two overlapping intervals do not settle which is better.** Whether a new scorecard truly beats the old one needs a proper test. Coming next: p-values and A/B tests.
+
+</InTheWild>
+
+<RulesOfThumb>
+
+| Rule                              | In words                                              |
+| --------------------------------- | ----------------------------------------------------- |
+| margin = multiplier × spread ÷ √n | the multiplier is about 2 at 95%                      |
+| 4 times the data                  | halves the margin                                     |
+| 99% instead of 95%                | about 30% wider                                       |
+| yes/no rate near 50%              | margin is about 1 ÷ √n (1,000 people: about 3 points) |
+
+</RulesOfThumb>
