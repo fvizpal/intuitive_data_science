@@ -8,6 +8,7 @@ const ORDER = [
   'sampling-clt',
   'confidence-intervals',
   'learning-rate',
+  'bias-variance',
   'woe-iv',
   'woe-to-scorecard',
   'ks-auc-gini',

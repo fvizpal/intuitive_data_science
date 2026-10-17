@@ -1,0 +1,168 @@
+---
+title: Bias, variance and overfitting
+slug: bias-variance
+track: models
+level: beginner
+minutes: 9
+prerequisites: []
+summary: A stiff model misses the pattern. A flexible model chases noise. How to find the middle, and why only data the model hasn't seen can tell you.
+---
+
+import { PredictFit } from '../../widgets/biasvar/PredictFit';
+import { FitTheCurve } from '../../widgets/biasvar/FitTheCurve';
+import { ManySamples } from '../../widgets/biasvar/ManySamples';
+import { ComplexityCurve } from '../../widgets/biasvar/ComplexityCurve';
+
+<Hook>Why does a model that fits my data perfectly fail on new data?</Hook>
+
+You record the temperature at random times of day. You want a **model** that predicts the temperature at any hour. Here the model is a curve.
+
+The points the curve learns from are the **training data**. Points it hasn't seen are **new data**. **Training error** is how far the curve sits from the training points. **Error on new data** is how far it sits from fresh points.
+
+<PredictFit client:visible />
+
+## 1. Fit the curve
+
+**How closely should the curve follow the points?**
+
+Each point is the true temperature plus a random wobble, the **noise**. No curve can beat the noise, so it sets a floor on the error: the **noise floor**. The **fit** is the curve drawn through the points. **Flexibility** is how many bends it may have: the slider sets the **degree**, where 1 is a straight line and 3 allows up to 2 bends. Both errors are typical gaps, in degrees C.
+
+More bends let the curve follow the points more closely. Following the points isn't the same as finding the pattern. The widget calls a curve too stiff to follow the cycle **underfitting**, and one that bends to chase noise **overfitting**.
+
+**Try this:** move the slider from 1 up to 12. Watch the curve, then watch both error cards.
+
+<FitTheCurve client:visible />
+
+<Misconception>
+  "Zero training error means the model is perfect." No: it means the model memorized the
+  points, noise included.
+</Misconception>
+
+**So:** training error keeps falling as you add bends. It can't tell you when to stop.
+
+<MathDetails summary="The math: how error is measured">
+
+Error is the root of the average squared gap (RMSE):
+
+$$
+\text{error} = \sqrt{\frac{1}{n}\sum_{i=1}^{n}\left(y_i - \hat y_i\right)^2}
+$$
+
+- $y_i$ is a dot you saw. $\hat y_i$ is the curve at the same hour.
+- Error on new data uses the exact average over the day instead of dots, so it never wobbles.
+- When the model can capture the truth, expected training MSE is $\sigma^2\,(n-p)/n$ for $p$ parameters (degree plus 1). With $n=20$, degree 10 and $\sigma=2$: $4 \times 9/20 = 1.8$, so the error is about 1.3, below the noise floor of 2. Each extra parameter soaks up a bit more noise.
+
+</MathDetails>
+
+## 2. Many samples
+
+**What if the points had been different?**
+
+Record another day and the same model gives another curve. Two things can go wrong. The curves can all be off in the same way: that is **bias**. Or they can disagree with each other: that is **variance**. Both are measured in squared degrees (°C²), so they add up with the noise.
+
+**Try this:** start at degree 1 and watch the curves bunch up but miss. Then go to degree 11 and watch them scatter.
+
+<ManySamples client:visible />
+
+<Misconception>
+  "High variance means the model is wrong on average." No: a flexible model can be right
+  on average and still wrong on every single sample.
+</Misconception>
+
+**So:** total error = bias² + variance + noise. Flexibility trades the first two against each other.
+
+<MathDetails summary="The math: bias, variance and noise">
+
+$$
+\text{Total} = \text{Bias}^2 + \text{Variance} + \sigma^2
+$$
+
+Take $N$ hours of the day and $M$ training samples. Let $f$ be the truth, $f_j$ the curve from sample $j$, and $\bar f$ the average of all $M$ curves.
+
+$$
+\text{Bias}^2 = \frac{1}{N}\sum_{\text{hours}} (f - \bar f)^2
+\qquad
+\text{Variance} = \frac{1}{N M}\sum_{\text{hours}}\sum_{j=1}^{M} (f_j - \bar f)^2
+$$
+
+- Bias² is the gap between the thick line and the dashed line, squared and averaged over the day.
+- Variance is how far the thin lines sit from the thick one, squared and averaged.
+- $\sigma^2$ is the noise: the spread of the dots around the truth, squared. Nothing can remove it.
+- The three add up exactly to the total squared error on new data.
+
+</MathDetails>
+
+## 3. The sweet spot
+
+**How flexible should the model be?**
+
+Sections 1 and 2 showed two effects of adding bends. The curve follows the dots it saw more closely. But it also reacts more to which dots it happened to see. This chart puts both effects side by side.
+
+At every degree, the chart trains the model on 60 different sets of points and averages the errors. That gives two lines:
+
+- **Training error** (dashed): how close the curve gets to the dots it learned from. More bends always help here, so this line only goes down.
+- **Error on new data** (solid): how close it gets to fresh points. At first more bends help, because a stiff curve misses the daily cycle (high bias). Then they hurt, because the curve starts chasing noise (high variance). So this line falls, then rises.
+
+The lowest point of the solid line is the **sweet spot**: the degree that predicts fresh points best. The hatched band between the lines is the **overfitting gap**: how much better the model looks on its own dots than on fresh ones. The gap widens as the curve gets more flexible.
+
+**Try this:** 1) Move **Your degree** and read the line under the slider. 2) Switch the number of points from 20 to 200: the sweet spot moves right. 3) Raise the noise to 4: it moves left.
+
+<ComplexityCurve client:visible />
+
+<Misconception>
+  "More data fixes underfitting." No: more points shrink the gap, but a curve that is too
+  stiff stays too stiff.
+</Misconception>
+
+**So:** more data and lower noise let you use a more flexible model. A model that's too stiff never improves.
+
+## 4. How to choose honestly
+
+**How do you find the sweet spot with real data?**
+
+In section 3 you could see the sweet spot because the chart used many fresh sets of points. With real data you have one set of points and no way to get fresh ones. So how do you choose the degree?
+
+Not by training error. Training error always falls as you add bends, so it always picks the most flexible curve, which is the one that chases noise.
+
+The fix is to hold some points back. Split your points in two:
+
+- **Training part:** the curve is fitted to these points only.
+- **Held-back part** (called **validation** data): the curve never sees these. You only use them to check it.
+
+Fit every degree on the training part. Then measure each curve's error on the held-back points. The held-back points are new data to the curve, so their error tells you how it will do on fresh points. Pick the degree with the lowest held-back error.
+
+
+<Misconception>
+  "Test the model on the same data you trained on." No: that is how you get a model that
+  looks perfect and fails.
+</Misconception>
+
+**So:** only data the model hasn't seen can tell you how it will behave.
+
+## In practice
+
+<InTheWild>
+
+- **Development versus later data.** A Gini or KS far higher in development than on later data is overfitting. Always check an out-of-time sample ([see KS, AUC and Gini](/concepts/ks-auc-gini/)).
+- **Drift exposes it.** Overfit models often look worst when the population drifts ([see PSI and drift](/concepts/psi-drift/)).
+- **Count your defaulters.** With about 200 defaulters you can afford few parameters. A common rule of thumb is about 10 defaults per variable in a logistic model.
+- **Too many bins overfit.** IV rises on pure noise ([see the noise trap in WoE and IV](/concepts/woe-iv/)).
+- **Near-duplicate features raise variance.** Coefficients swing from sample to sample ([see correlation](/concepts/correlation/)).
+- **Flexibility knobs.** Trees, boosting rounds and learning rate all add flexibility. Early stopping watches held-back error ([see learning rate](/concepts/learning-rate/)).
+- **Use the test set once.** Tuning against it repeatedly turns it into training data.
+- **Seasons can be memorized.** Validate on a later period, not a random split.
+
+</InTheWild>
+
+<RulesOfThumb>
+
+| Rule                                       | In words                                           |
+| ------------------------------------------ | -------------------------------------------------- |
+| Training error low, error on new data high | overfitting: simplify, add data, or restrain it    |
+| Both errors high and close                 | underfitting: add flexibility or better features   |
+| More data                                  | the gap shrinks; bias doesn't                      |
+| Choosing between models                    | use held-back or out-of-time error, never training |
+
+</RulesOfThumb>
+
+Coming later: Regularization, and Train, validation and cross-validation.
