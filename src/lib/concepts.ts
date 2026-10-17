@@ -9,6 +9,7 @@ const ORDER = [
   'confidence-intervals',
   'learning-rate',
   'bias-variance',
+  'threshold-precision-recall',
   'woe-iv',
   'woe-to-scorecard',
   'ks-auc-gini',

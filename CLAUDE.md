@@ -177,8 +177,7 @@ Three MVP concepts first, then one new concept every 2–3 weeks. The credit-ris
 | --- | --- | --- | --- | --- |
 | Learning rate | optimization | MVP | Ball stepping down a loss curve; bounce and divergence | XGBoost `eta` vs number of trees |
 | Bias, variance and overfitting | models | **Done** | Degree slider on temperature data; 200 refits with bias² + variance + noise; train vs new-data error curve and sweet spot; picking the degree by training vs held-back error | Model fits old vintages, fails on new ones; out-of-time checks; too many bins or near-duplicate features |
-| Threshold, precision and recall | evaluation | MVP | Slide a cutoff over two score distributions; confusion matrix updates | Approval cutoff vs expected losses |
-| Threshold, precision and recall | models | Planned | Slide a cutoff over two score distributions; confusion matrix updates | Approval cutoff vs expected losses |
+| Threshold, precision and recall | models | **Done** | Spam-filter cutoff over two score crowds; four outcomes and accuracy; recall, precision and F1 against the cutoff; 1,000 dots showing rare events; cost curve with the cheapest cutoff | Approval cutoff vs expected losses; precision falls as the base rate falls; review capacity sets the cutoff |
 | Gradient descent | models | Planned | Ball stepping down a loss curve; the step rule | Fitting a logistic scorecard by hand |
 | Train, validation, test and cross-validation | models | Planned | Folds sliding across the data; the test set used once | Out-of-time validation |
 | Regularization | models | Planned | Coefficients shrinking as the penalty grows | Pruning bureau variables |

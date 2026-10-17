@@ -1,0 +1,190 @@
+---
+title: Threshold, precision and recall
+slug: threshold-precision-recall
+track: models
+level: beginner
+minutes: 9
+prerequisites: []
+summary: A model gives a score, a cutoff turns it into a decision. Every cutoff trades missed cases against false alarms, and the right one depends on costs and how rare the cases are.
+---
+
+import { PredictFilter } from '../../widgets/threshold/PredictFilter';
+import { SlideTheThreshold } from '../../widgets/threshold/SlideTheThreshold';
+import { PrecisionVsRecall } from '../../widgets/threshold/PrecisionVsRecall';
+import { RareEvents } from '../../widgets/threshold/RareEvents';
+import { CostCutoff } from '../../widgets/threshold/CostCutoff';
+
+<Hook>My filter flagged 100 emails. How many are really spam?</Hook>
+
+A spam filter scores every email from 0 to 100. Higher means more spammy. You pick a **cutoff**, and every email scoring at or above it goes to the spam folder. Two numbers describe the filter: how much spam it catches, and how often it wrongly flags good mail.
+
+<PredictFilter client:visible />
+
+## 1. Slide the cutoff
+
+**Where do you draw the line?**
+
+Emails at or above the cutoff are **flagged**. Each email then lands in one of four outcomes: flagged or not, and spam or not. **Accuracy** is the share of emails sorted correctly.
+
+**Try this:** slide the cutoff from 0 to 100. Watch the four counts trade places. Then press Flag nothing.
+
+<SlideTheThreshold client:visible />
+
+<Misconception>
+  "A filter with high accuracy is a good filter." No: when spam is rare, a filter that
+  flags nothing already scores high.
+</Misconception>
+
+**So:** every cutoff makes two kinds of mistakes. Accuracy alone can't see them.
+
+<MathDetails summary="The math: accuracy">
+
+$$
+\text{Accuracy} = \frac{\text{caught spam} + \text{correctly passed}}{\text{all emails}}
+$$
+
+- Caught spam and correctly passed are the two cells where the filter was right.
+- Flag nothing: caught spam is 0 and every good email is correctly passed, so accuracy is the share of good mail. At 10% spam that is 90%.
+
+</MathDetails>
+
+## 2. Recall and precision
+
+**How do you describe a cutoff with two numbers?**
+
+Of all the spam, how much did the filter catch? That is **recall**. Of everything it flagged, how much is really spam? That is **precision**. The **false alarm rate** is the share of good mail wrongly flagged. **F1** is one number that is high only when recall and precision are both high.
+
+**Try this:** press Catch more spam, then Flag only sure things. Watch recall and precision swap.
+
+<PrecisionVsRecall client:visible />
+
+<Misconception>
+  "Pick the right cutoff and you get high recall and high precision." Not with this
+  filter: a cutoff only trades one for the other. A better filter moves the whole curve.
+</Misconception>
+
+**So:** catching more means flagging more, so more of what you flag is wrong.
+
+<MathDetails summary="The math: recall, precision, F1">
+
+$$
+\text{Recall} = \frac{\text{caught spam}}{\text{all spam}}
+\qquad
+\text{Precision} = \frac{\text{caught spam}}{\text{all flagged}}
+$$
+
+$$
+\text{False alarm rate} = \frac{\text{false alarms}}{\text{all good mail}}
+\qquad
+F_1 = \frac{2 \times \text{precision} \times \text{recall}}{\text{precision} + \text{recall}}
+$$
+
+- $F_1$ is the harmonic mean of precision and recall. It is low whenever either one is low.
+- Where nothing is flagged, precision is $0 \div 0$: undefined. The widget shows no point there.
+- ROC and AUC plot recall against false alarm rate at every cutoff: see [KS, AUC and Gini](/concepts/ks-auc-gini).
+
+</MathDetails>
+
+## 3. Rare events
+
+**Why is a good filter wrong so often when spam is rare?**
+
+The same filter works differently when spam is rare. Here are 1,000 emails, one dot each. This is the answer to the prediction at the top.
+
+**Try this:** start with 4% spam. Then drag the spam share up to 50%, and down to 1%.
+
+<RareEvents client:visible />
+
+<Misconception>
+  "A filter that catches 90% of spam is right 90% of the time when it flags." No:
+  precision depends on how common spam is, not only on the filter.
+</Misconception>
+
+**So:** same filter, rarer spam, more of what you flag is wrong. Recall and false alarm rate don't change; precision does.
+
+<MathDetails summary="The math: precision from counts">
+
+$$
+\text{Precision} = \frac{\text{share} \times \text{recall}}{\text{share} \times \text{recall} + (1 - \text{share}) \times \text{false alarm rate}}
+$$
+
+- Top: caught spam per email. Bottom: all flagged mail per email, the caught spam plus the false alarms.
+- With the defaults, per 1,000 emails: $0.04 \times 0.90 \times 1000 = 36$ caught and $0.96 \times 0.05 \times 1000 = 48$ false alarms. Precision is $36 \div 84 = 43\%$.
+
+</MathDetails>
+
+## 4. Choosing by cost
+
+**Which cutoff should you pick?**
+
+So far every mistake counted the same. In real life they don't. A cutoff makes two kinds of mistakes, and each has a price.
+
+- **A missed spam** lands in your inbox. It is annoying, and that is all.
+- **A false alarm** sends a real email to the spam folder. You may never see it. That usually costs more.
+
+A smoke alarm is the other way round. One that misses a fire costs far more than one that rings for burnt toast, so you set it to ring easily.
+
+To compare cutoffs, put both prices on one scale. **Miss units**: one unit is the cost of one missed spam. Then ask how many misses one false alarm is worth. If losing a real email hurts as much as five missed spams, a false alarm costs 5 units. That ratio is the slider.
+
+For any cutoff, the **cost** is the missed spam, plus the false alarms times their price. The chart adds this up for 20,000 emails and shows it **per 1000 emails**, for every cutoff. Lower is better, and the lowest point is the **cheapest cutoff**.
+
+Two dashed lines give the simple rules to beat: **flag nothing** (you pay for every missed spam) and **flag everything** (you pay for every false alarm). A cutoff is only worth having if its cost is below both.
+
+**Try this:** press Spam filter, then Smoke alarm. Watch the cheapest cutoff move. Then drag the black line to your own cutoff and compare its cost with the cheapest.
+
+<CostCutoff client:visible />
+
+<Misconception>
+  "The default cutoff (50, or 0.5) is the right one." No: it is a choice. Costs and how
+  common spam is decide it.
+</Misconception>
+
+**So:** when false alarms cost more, raise the cutoff. When misses cost more, lower it. Rarer spam also pushes the cheapest cutoff up, because there is less spam to catch. Choose the cutoff from costs and how rare the cases are, not from a default.
+
+<MathDetails summary="The math: the cheapest cutoff">
+
+$$
+\text{Cost} = \text{missed spam} \times \text{cost of a miss} + \text{false alarms} \times \text{cost of a false alarm}
+$$
+
+For two bell curves of equal width, the cheapest cutoff has a closed form:
+
+$$
+\text{cutoff} = \text{midpoint of the two means} + \frac{\text{sd}^2}{\text{separation}} \times \ln\!\left(\frac{(1 - \text{share}) \times \text{cost ratio}}{\text{share}}\right)
+$$
+
+- Cost ratio = cost of a false alarm ÷ cost of a miss. Separation = spam mean − good mean.
+- With this page's numbers: $50 + \dfrac{15^2}{30} \times \ln(\cdots) = 50 + 7.5 \times \ln(\cdots)$.
+- Share 10% and ratio 5: $\ln\!\left(\dfrac{0.9 \times 5}{0.1}\right) = \ln 45 = 3.81$, so the cutoff is $50 + 7.5 \times 3.81 = 78.6$. Ratio 1 gives 66.5, the best cutoff for accuracy.
+- When a score is an honest probability, flag it if the probability is above cost of a false alarm ÷ (cost of a false alarm + cost of a miss). This only works when the probabilities are honest.
+
+</MathDetails>
+
+## 5. In practice
+
+<InTheWild>
+
+- Pick the cutoff from costs and review capacity, not from 0.5. If reviewers can check 100 cases a day, set the cutoff so about 100 are flagged.
+- On rare events (a 4% default rate), accuracy is nearly useless. Report recall and precision, and the counts behind them.
+- A scorecard cutoff trades approval rate against bad rate. It is this same trade: see [From WoE to a scorecard](/concepts/woe-to-scorecard).
+- Gini, AUC and KS summarise every cutoff at once, but you still have to choose one: see [KS, AUC and Gini](/concepts/ks-auc-gini).
+- Precision falls when the base rate falls. After drift, or in a new segment, the same cutoff gives different precision: see [PSI and drift](/concepts/psi-drift).
+- Class weights and resampling shift the probabilities, so cutoffs set on them need care. Coming later in the credit-risk track: Calibration.
+- Choose the cutoff on validation data and report it on test data. A cutoff tuned on the test set is overfitted: see [Bias, variance and overfitting](/concepts/bias-variance).
+- Review the cutoff when costs, volumes or policy change, not only when the model changes.
+
+</InTheWild>
+
+<RulesOfThumb level={3} title="Rules of thumb">
+
+| If                     | Then                                                |
+| ---------------------- | --------------------------------------------------- |
+| Misses cost more       | Lower the cutoff, raise recall                      |
+| False alarms cost more | Raise the cutoff, raise precision                   |
+| Events are rare        | Don't trust accuracy                                |
+| The base rate changes  | Recheck the cutoff                                  |
+| The model is fixed     | No cutoff gives both high precision and high recall |
+
+</RulesOfThumb>
+
+Coming later: Train, validation, test and cross-validation.
