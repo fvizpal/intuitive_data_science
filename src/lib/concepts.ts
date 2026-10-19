@@ -10,6 +10,7 @@ const ORDER = [
   'learning-rate',
   'bias-variance',
   'threshold-precision-recall',
+  'validation-cv',
   'woe-iv',
   'woe-to-scorecard',
   'ks-auc-gini',

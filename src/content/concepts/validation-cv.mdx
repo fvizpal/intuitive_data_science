@@ -1,0 +1,255 @@
+---
+title: Train, validation, test and cross-validation
+slug: validation-cv
+track: models
+level: beginner
+minutes: 9
+prerequisites: [bias-variance]
+summary: You can't judge a model on the data it learned from. Split the data, check each split has one job, and use cross-validation when data is scarce.
+---
+
+import { PredictCoin } from '../../widgets/validation/PredictCoin';
+import { ThreeSets } from '../../widgets/validation/ThreeSets';
+import { WinnersCurse } from '../../widgets/validation/WinnersCurse';
+import { FoldsInMotion } from '../../widgets/validation/FoldsInMotion';
+import { RandomVsFuture } from '../../widgets/validation/RandomVsFuture';
+
+<Hook>You tried 50 models and picked the best. Will new data score like your best?</Hook>
+
+A model always looks good on the data it learned from: its **training error** is low. What matters is its **error on new data**, the gap on points it never saw. To measure that, you need data the model hasn't seen. If you look at that data many times, it stops being unseen.
+
+<PredictCoin client:visible />
+
+## 1. Three sets
+
+**How do you test a model fairly?**
+
+Think of studying for an exam. Practice problems teach you. A mock test shows which way of studying works. The final exam shows how you will really do, and you look at it once.
+
+Split your data the same way. The **training set** (practice problems) teaches the model. The **validation set** (mock test) is **held back**: the model never learns from it, and you use it to compare models. The **test set** (final exam) is held back too, and you look at it once, at the end.
+
+**Try this:** slide the degree. Watch the mock test error, find its lowest point, then lock in that degree.
+
+<ThreeSets client:visible />
+
+<Misconception>
+  "Use the test set to choose between models." No: the moment a choice depends on the test
+  score, the test set stops being fair.
+</Misconception>
+
+**So:** practice teaches, the mock test chooses, the final exam is a single look.
+
+<MathDetails summary="The math: how much can a mock test score wobble?">
+
+**The question.** The mock test error you see comes from a handful of points. Pick another handful and you get another number. How far apart can the two numbers be? This tells you how much to trust a small mock test.
+
+**Step 1: what one point contributes.** Suppose the model is about as good as it can be. Then each mock test point misses by pure noise. Call that miss $e$. Noise is random: usually small, sometimes big. Its typical size (standard deviation) is $\sigma$. Here $\sigma = 2$ °C, the noise you set in the data.
+
+**Step 2: square it.** The error measure averages _squared_ misses, so look at $e^2$. On average $e^2$ equals $\sigma^2$ (that is what $\sigma^2$ means). But $e^2$ itself jumps around: a miss of 0.5 gives 0.25, a miss of 4 gives 16. For bell-shaped noise, the typical jump of $e^2$ around its average is $\sigma^2\sqrt{2}$. (This is a known property of the bell curve. The factor $\sqrt{2}$ comes from its tails: big misses are rare but count a lot once squared.)
+
+**Step 3: average $n$ of them.** The mock test averages the squared misses of its $n$ points. Averaging cancels randomness, but only slowly: the jump of an average is the jump of one item divided by $\sqrt{n}$. This is the same square-root rule you saw on the sampling page: 4 times the points halves the wobble.
+
+$$
+\text{wobble of the mean squared error} \approx \frac{\sigma^2\sqrt{2}}{\sqrt{n}} = \sigma^2\sqrt{\frac{2}{n}}
+$$
+
+**Step 4: back to the units you read.** The page shows error in °C, which is the square root of the mean squared error. So the wobble in step 3 must be converted from squared °C to °C.
+
+Why divide? A square root grows more slowly than its input. Compare a few values:
+
+- $\sqrt{4} = 2$
+- $\sqrt{5.6} = 2.37$: the input rose by 1.6, but the root rose by only 0.37.
+- $\sqrt{2.4} = 1.55$: the input fell by 1.6, but the root fell by only 0.45.
+
+Averaging the two, a wobble of 1.6 in the squared error becomes about 0.4 in the error. The shortcut: near a value $\sigma^2$, a small change in the input changes the root by about
+
+$$
+\frac{\text{change in the input}}{2\sigma}
+$$
+
+Check: $1.6 / (2 \times 2) = 0.4$. This is the slope of the square root curve, and it gets flatter as $\sigma$ grows, so the bigger the typical error, the less a given wobble in the squared error shows up in °C. Applying it to step 3:
+
+$$
+\text{wobble of the mock test error} \approx \frac{\sigma^2\sqrt{2/n}}{2\sigma} = \frac{\sigma}{\sqrt{2n}}
+$$
+
+**Worked example.** $\sigma = 2$ °C and $n = 12$ mock test points (the 60 / 20 / 20 split of 60 points):
+
+- Mean squared error is about $\sigma^2 = 4$, give or take $4\sqrt{2/12} \approx 1.6$.
+- Error in °C is about $2$, give or take $\dfrac{2}{\sqrt{24}} \approx 0.4$ °C.
+
+So two models that are truly equal can differ by around 0.4 °C on this mock test, purely by luck. That is why the lowest mock test error can sit a degree or two away from the truly best degree. With 120 points ($n = 24$) the wobble falls to about 0.3 °C.
+
+**What it does not cover.** This assumes the model has about the noise-level error. A badly overfit model has bigger and wilder misses, so its score wobbles more. And choosing the lowest of many wobbling scores is slightly optimistic, which the next section shows in its purest form.
+
+</MathDetails>
+
+## 2. The winner's curse
+
+**Why does your best model score worse next time?**
+
+Picture 50 people who guess the answers to 100 true-or-false questions by flipping a coin. None has any skill. Each scores about 50, give or take a few points of luck. Some get 45, some get 56, and the luckiest gets about 61. If you hire that person because of the score, you hired luck. On fresh questions they fall back to about 50.
+
+Models behave the same way. Each model's score on the mock test is its real skill plus some luck. When you try many models and keep the best, you also keep the luckiest. The luck was specific to those questions, so it doesn't come with the model to the final exam. This is **selection bias**, also called the **winner's curse**.
+
+In the widget, every model is a coin flip: it answers each question at random, so real skill is 50% for all of them. Any score above 50% is luck.
+
+**Try this:** run 200 trials at 50 models. Then drop to 5 models, then raise the questions to 2000. Watch two things: how far the best score sits above 50%, and what the same winner scores on fresh questions.
+
+<WinnersCurse client:visible />
+
+What you should have seen:
+
+- **More models, bigger flattery.** The best of 50 beats the best of 5, though no model got any better.
+- **More questions, less flattery.** Luck averages out over many questions, so with 2000 the best of 50 is only a little above 50%.
+- **Fresh questions erase it.** The winner's score on new questions is centred on 50%, its real skill.
+
+<Misconception>
+  "A high validation score means a good model." Not when many models were tried: the best
+  one is the luckiest, not only the best.
+</Misconception>
+
+**So:** the more things you try, the more the winner's score is flattered. Report the test score, not the validation score.
+
+<MathDetails summary="The math: how big is the flattery?">
+
+**The question.** How far above its real skill does the best of $K$ equally skilled models score, on a mock test of $m$ questions?
+
+**Step 1: the luck in one model.** Take real skill 50%. Each answer is right or wrong like a coin flip. Over $m$ answers, the score is the share right. Its typical wobble around 50% (standard deviation) is
+
+$$
+\text{spread of one score} = \sqrt{\frac{\text{skill} \times (1-\text{skill})}{m}}
+$$
+
+For $m = 100$ and skill 0.5 this is $\sqrt{0.25/100} = 0.05$, so 5 points. The $m$ underneath the root is why more questions mean less luck: 4 times the questions halves the spread.
+
+**Step 2: the best of $K$.** Each model's score is a draw from a bell curve centred on the skill with that spread. The best of $K$ draws sits a number of spreads above the centre. Call that number $z_K$. It grows with $K$, but slowly:
+
+| Models $K$ | 1   | 5   | 10  | 50  | 200 |
+| ---------- | --- | --- | --- | --- | --- |
+| $z_K$      | 0   | 1.2 | 1.5 | 2.2 | 2.7 |
+
+Why does it grow? Roughly, the best score is the level that you expect about one model to reach. Among 50 models, about one lands in the top $1/50 = 2\%$ of the bell curve, which starts about 2 spreads above the centre. Among 200 models, about one lands in the top 0.5%, about 2.6 spreads up. Each time you multiply $K$ by 4, the best only moves up by a fraction of a spread.
+
+**Step 3: put them together.**
+
+$$
+\text{expected best score} \approx \text{skill} + z_K \times \sqrt{\frac{\text{skill} \times (1-\text{skill})}{m}}
+$$
+
+**Worked example.** Skill 50%, $m = 100$, $K = 50$: $50\% + 2.2 \times 5\% = 61\%$. With $m = 2000$ the spread is $\sqrt{0.25/2000} = 1.1$ points, so the best of 50 shows $50\% + 2.2 \times 1.1\% \approx 52.5\%$. Both match the widget.
+
+**What it leaves out.** The bell curve is an approximation: real scores are whole numbers of correct answers. The widget computes the exact value from the true coin-flip distribution, so its theory line differs slightly from this formula. And the formula only describes models of equal skill. Real models differ in skill, so the winner is part skill and part luck, and you can't tell the shares apart from the mock test alone.
+
+</MathDetails>
+
+## 3. Cross-validation
+
+**What if you can't spare a big mock test?**
+
+When data is scarce, a held-back set is small and its verdict is noisy. Cross-validation fixes this by letting every point take a turn at being held back.
+
+Here is how it works, with 40 points and k = 5:
+
+1. Shuffle the 40 points, then deal them into 5 groups called **folds**. Each fold gets the same number of points: 40 ÷ 5 = 8. The dealing is random, so a fold is not "the first 8 hours" or "the left side". It is a random handful from across the whole day. (If the points don't divide evenly, say 42 points in 5 folds, some folds get one more point than others, never more than one.)
+2. Turn 1: hold back fold 1 (8 points). Fit the model on the other 32. Measure its error on the 8 held-back points.
+3. Turn 2: put fold 1 back and hold back fold 2. Fit again on the other 32 and measure on the 8 held-back points. Repeat until every fold has had a turn.
+4. Every point has now been held back exactly once, by a model that never saw it. Pool those 40 checks into one number: the **cross-validation error**.
+
+With k = 40 each fold is a single point. That is **leave one out**.
+
+Here the data is the temperature curve from the previous page, 40 points. Panel B also draws the real error, which only a simulation can know.
+
+**Try this:** press Play at 5 folds and watch every point take a turn. Then slide the degree and see which degree step 2 recommends. Last, press "Try 100 new datasets" and compare how steady the two methods are.
+
+<FoldsInMotion client:visible />
+
+<Misconception>
+  "More folds always means a better estimate." No: past about 10 folds the gain is small
+  and the cost grows. Leave-one-out is the most expensive and can be the noisiest choice.
+</Misconception>
+
+**So:** cross-validation reuses every point for both learning and checking, and gives a steadier verdict than one split.
+
+## 4. Random split vs the future
+
+**Should you shuffle before you split?**
+
+Imagine a page torn from the middle of a diary. If you can still read the pages before and after it, guessing what it said is easy: the day before and the day after tell you most of it. Now imagine the last pages are missing, with nothing after them. You have to predict what comes next, which is much harder.
+
+A **random split** tears pages out of the middle of your data. A **future split** (also called an **out-of-time split**) removes the last pages. Only the second looks like the job you will really do: learn from the past, predict what comes next.
+
+Here the data is a household electricity bill, 48 months of it. It creeps up each month and peaks every summer. You want to forecast the next 12 months and have two forecasters to choose from:
+
+- **Connect the dots:** draws a line through every known month. Great at filling a gap between known months. After the last known month it can only repeat the last value.
+- **Trend line:** one straight line through the months. It misses the summer bumps, but it follows where the bill is heading.
+
+You hold months back, ask validation which forecaster is better, and then the widget checks the answer against the real next year.
+
+**Try this:** under Random, read which forecaster validation picks and which one is really best. Switch to Future and read again. Then press "Try 100 new histories".
+
+<RandomVsFuture client:visible />
+
+What you should have seen:
+
+- **Random split:** Connect the dots looks excellent, because every held-back month sits between known months. But next year it does worse than the Trend line. Validation picked the wrong forecaster.
+- **Future split:** the held-back months come after the known ones, so Connect the dots has to look ahead and loses. Validation picks the Trend line, which really is better.
+- **Over 100 histories:** the random split almost always picks the wrong forecaster, and the future split almost always picks the right one.
+
+<Misconception>
+  "Shuffle the data before splitting, always." Not when time matters: shuffling lets the
+  model peek at the months around each held-back month.
+</Misconception>
+
+**So:** if the model will be used on the future, validate on the future.
+
+<MathDetails summary="The math: why connecting the dots looks so good on a random split">
+
+**The question.** Under a random split, Connect the dots scores far better than the Trend line, yet it loses next year. How can the score be so misleading?
+
+**Step 1: a bill is a smooth part plus noise.** Each month's bill is the underlying pattern (trend plus summer wave) plus a random wobble of typical size $\sigma = 80$ rupees.
+
+**Step 2: filling a gap.** Suppose a held-back month sits between two known months. The pattern changes slowly, so the neighbours' underlying values are nearly the same as the held-back month's. Connect the dots predicts the held-back month from its neighbours' actual bills, which contain wobble of their own. The miss is mostly two wobbles added together: the held-back month's and the neighbour's. Two independent wobbles of size $\sigma$ combine to
+
+$$
+\sqrt{\sigma^2 + \sigma^2} = \sigma\sqrt{2} \approx 113 \text{ rupees}
+$$
+
+That is close to the best score any forecaster could hope for, because the wobble in the month itself can never be predicted. So under a random split Connect the dots looks nearly perfect.
+
+**Step 3: the Trend line pays for ignoring the summer wave.** It misses the wave, whose size is about 212 rupees. So it scores about 230, roughly twice as bad.
+
+**Step 4: next year has no neighbours.** The 12 months after the last known month have no known months on their far side. Connect the dots can only repeat the last value, and the real bill keeps drifting and bouncing for a whole year. Its miss grows with distance, to roughly 320 rupees. The Trend line is still about 230. The ranking flips.
+
+**Step 5: why the future split gets it right.** The future split holds back months that also come after the known ones, so Connect the dots faces the same missing-neighbours problem as in real life, and the ranking matches next year.
+
+**What it does not claim.** The numbers depend on this made-up bill. What carries over is the idea: whenever neighbouring rows look alike, a random split lets the model lean on its neighbours, and the score stops telling you how it will do on rows with no neighbours.
+
+</MathDetails>
+
+## In practice
+
+<InTheWild>
+
+- **Credit models:** build on older vintages, validate on later ones, test on the latest. Shuffling hides drift ([see PSI and drift](/concepts/psi-drift/), [KS, AUC and Gini](/concepts/ks-auc-gini/)).
+- **Use the test set once.** If you tune against it, treat it as training data and hold out a new one.
+- **Many features, bins or models tried:** the winner's score is flattered. Report test, not validation ([see the noise trap in WoE and IV](/concepts/woe-iv/)).
+- **Fit WoE binning, scaling and imputation inside each training fold,** never on all the data first. Otherwise the target leaks into validation ([see WoE and IV](/concepts/woe-iv/)).
+- **Rare defaults (about 4%):** keep the default share the same in every fold (stratify), or some folds may have very few defaulters ([see threshold, precision and recall](/concepts/threshold-precision-recall/)).
+- **Several loans from the same borrower or business** must stay in the same fold (grouped folds). Otherwise the model sees the customer in training and in validation.
+- **Report cross-validation as the mean plus the spread across folds,** not the mean alone.
+- **After choosing, refit on all training data.** Early stopping and learning rate choices also use validation ([see learning rate](/concepts/learning-rate/)).
+
+</InTheWild>
+
+<RulesOfThumb level={3} title="Rules of thumb">
+
+| If                           | Then                                      |
+| ---------------------------- | ----------------------------------------- |
+| Lots of data                 | One train, validation, test split is fine |
+| Little data                  | k-fold (5 or 10)                          |
+| Time matters                 | Split by time                             |
+| Choosing between many models | Keep a separate test set                  |
+| Same entity in several rows  | Group the folds                           |
+
+</RulesOfThumb>
