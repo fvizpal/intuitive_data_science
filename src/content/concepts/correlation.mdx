@@ -65,7 +65,7 @@ Two witnesses who heard the same story from the same person are not two independ
 
 - At 0.98, press **Retrain** a few times. x1's credit and x2's credit jump around (even to negative) because the model cannot tell the twins apart.
 - Look at the **total credit** (β1 + β2). It stays near 1 every time: the model knows the pair matters, it just cannot decide who gets the credit.
-- Slide similarity toward 0, or switch on **Drop x2**. The wobble disappears.
+- Slide similarity toward 0, or switch on **Drop x2**. The wobble disappears. A penalty on the coefficients calms it too: see [Regularization](/concepts/regularization/).
 
 <Explain level={3}>
 

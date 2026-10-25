@@ -11,6 +11,7 @@ const ORDER = [
   'bias-variance',
   'threshold-precision-recall',
   'validation-cv',
+  'regularization',
   'woe-iv',
   'woe-to-scorecard',
   'ks-auc-gini',

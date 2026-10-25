@@ -178,12 +178,12 @@ Three MVP concepts first, then one new concept every 2–3 weeks. The credit-ris
 | Learning rate | optimization | MVP | Ball stepping down a loss curve; bounce and divergence | XGBoost `eta` vs number of trees |
 | Bias, variance and overfitting | models | **Done** | Degree slider on temperature data; 200 refits with bias² + variance + noise; train vs new-data error curve and sweet spot; picking the degree by training vs held-back error | Model fits old vintages, fails on new ones; out-of-time checks; too many bins or near-duplicate features |
 | Threshold, precision and recall | models | **Done** | Spam-filter cutoff over two score crowds; four outcomes and accuracy; recall, precision and F1 against the cutoff; 1,000 dots showing rare events; cost curve with the cheapest cutoff | Approval cutoff vs expected losses; precision falls as the base rate falls; review capacity sets the cutoff |
-| Gradient descent | models | Planned | Ball stepping down a loss curve; the step rule | Fitting a logistic scorecard by hand |
+| Gradient descent (then the XGBoost series) | models | Planned | Ball stepping down a loss curve; the step rule | Fitting a logistic scorecard by hand |
 | Train, validation, test and cross-validation | models | **Done** | Practice / mock test / final exam split with the test error hidden until locked in; 50 coin-flip models showing the winner's curse; 40 points taking turns as the held-back fold, CV vs real error by degree, 100-dataset pick comparison; random vs future split on monthly electricity bills | Out-of-time validation; fit WoE and scaling inside each fold; stratified and grouped folds for rare defaults and repeat borrowers |
-| Regularization | models | Planned | Coefficients shrinking as the penalty grows | Pruning bureau variables |
+| Regularization | models | **Done** | Ridge penalty on a degree-12 curve with a train vs new-data error sweet spot; 20 coefficient paths for ridge and lasso with exact zeros; circle vs diamond budget on a plane of two weights (twin features); cross-validation explained in five plain steps (no widget); units changing the penalty unless standardized | Penalized logistic scorecards (sklearn C); fit WoE and scaling inside each fold; stable lasso screens; calibration after shrinkage; XGBoost reg_lambda / reg_alpha |
 | Momentum and Adam vs SGD | optimization | Next | Three optimizers racing on a ravine-shaped contour | — |
 | Feature scaling | optimization | Next | Elongated vs round contours; steps zig-zag or go straight | Loan amount vs ratio features |
-| L1 / L2 regularization | models | Next | Coefficient paths as lambda grows; L1 hitting zero | Pruning bureau variables |
+| L1 / L2 regularization | models | **Done** | Covered by the Regularization page (coefficient paths, L1 hitting zero) | Pruning bureau variables |
 | ROC and AUC | evaluation | Next | ROC curve built point by point as threshold moves | Gini = 2 × AUC − 1 |
 | Decision tree splits | models | Next | Click to split a 2D dataset; impurity drops | Rule-based policy vs model |
 | k-means | models | Next | Step through assign / update iterations | Customer segments |

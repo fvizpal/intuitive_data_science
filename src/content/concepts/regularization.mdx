@@ -1,0 +1,250 @@
+---
+title: Regularization
+slug: regularization
+track: models
+level: beginner
+minutes: 10
+prerequisites: [bias-variance]
+summary: A penalty on big coefficients keeps a flexible model from memorizing noise. Ridge shrinks everything, lasso drops features, and held-back data picks the strength.
+---
+
+import { PredictPenalty } from '../../widgets/regularization/PredictPenalty';
+import { LeashOnTheCurve } from '../../widgets/regularization/LeashOnTheCurve';
+import { CoefPaths } from '../../widgets/regularization/CoefPaths';
+import { WhyLassoHitsZero } from '../../widgets/regularization/WhyLassoHitsZero';
+import { UnitsMatter } from '../../widgets/regularization/UnitsMatter';
+
+<Hook>
+  You have 20 candidate features and only 40 rows. How do you stop the model from
+  memorizing?
+</Hook>
+
+A model with too much freedom fits noise. That is **overfitting**: it does well on the points it learned from and badly on new ones. One fix is to make big coefficients costly. A **coefficient** (or weight) says how strongly an input moves the prediction. A **penalty** adds a cost for large ones.
+
+<PredictPenalty client:visible />
+
+## 1. A leash on the curve
+
+**How do you stop a bendy curve from chasing noise?**
+
+This is the temperature world from the last page. The curve below can bend up to 11 times, so with few points it chases noise. A penalty on coefficient size pulls the bends out. The first coefficient, the intercept (the overall level), is never penalized.
+
+The **penalty strength** (lambda) sets how costly a big coefficient is. This penalty, on the square of each coefficient, is called **ridge** (or L2). Pulling coefficients toward zero is **shrinkage**.
+
+**Try this:** start with no penalty. Drag the slider right and watch the curve smooth out. Then keep going.
+
+<LeashOnTheCurve client:visible />
+
+<Misconception>
+  "A penalty makes the model worse because training error goes up." No: training error is
+  the wrong judge. It rises by design, and error on new data falls first.
+</Misconception>
+
+**So:** a penalty trades a bit of training accuracy for steadiness. Training error always rises; error on new data has a sweet spot.
+
+<MathDetails summary="The math: the ridge cost">
+
+Ridge picks the curve with the lowest total of two things: how far it misses the points, plus a cost for big coefficients.
+
+$$
+\underbrace{\frac{1}{2n}\sum_{i=1}^{n}\left(y_i - \hat y_i\right)^2}_{\text{how far the curve misses the points}} \;+\; \underbrace{\frac{\lambda}{2}\sum_{j=1}^{p}\beta_j^{2}}_{\text{cost of big coefficients}}
+$$
+
+- **First part:** for each point, take the gap between the real value $y_i$ and the curve $\hat y_i$, square it, and average. A curve that hugs the points makes this small.
+- **Second part:** square each coefficient $\beta_j$ and add them up. Big coefficients make this large, and $\lambda$ (the penalty strength) says how much that counts. At $\lambda = 0$ there is no cost, so you get the plain best fit.
+- **The intercept** (the overall level of the curve) is left out of the second part, so the penalty never pulls the whole curve up or down.
+- **Effective flexibility** is the card that says "x of 13". With no penalty, all 13 of the curve's knobs are free to move, so it reads 13. A stronger penalty pulls the knobs toward zero so they count for less, and the number falls toward 1: only the overall level is left, a flat line.
+
+</MathDetails>
+
+## 2. Ridge and lasso paths
+
+**What does a penalty do when most features are useless?**
+
+Here is a model with 20 inputs (called **features**). Only 3 really affect the answer. The other 17 are noise. But with only 40 rows, the model can't tell which is which, so it gives every feature a weight (a coefficient), and the useless ones get weights that are wrong.
+
+A penalty fixes this. There are two common kinds:
+
+- **Ridge** (L2) charges for the square of each weight. It shrinks all the weights a little. None reaches zero.
+- **Lasso** (L1) charges for the size of each weight. It shrinks them too, and some drop to exactly zero. A weight of zero means the feature is out of the model.
+
+How to read the charts: the top chart has one line per feature. Left to right, the penalty gets stronger. The bottom chart shows the weights as bars at the penalty you picked. The 3 real features are the thick blue lines and the outlined bars. The dashed lines and hollow diamonds mark the **true weights**: the numbers we used to make this data (3, −2 and 1.5 for the real features, 0 for the useless ones). The model never sees them. It only sees the rows, so you can check how close its weights get. Real projects can't draw these, because nobody knows the true weights.
+
+Before penalizing, each feature is **standardized**: shifted to average 0 and scaled to spread 1. Without this, the penalty would hit features with small numbers harder. The weights shown are converted back to the original units.
+
+**Try this:** start with no penalty and look at the bars: the 17 useless features have weights too. Under Ridge, drag right and watch them shrink but stay. Then switch to Lasso, drag again, and watch bars hit exactly 0. Note the error on new data: it falls, then rises when too many features are cut.
+
+<CoefPaths client:visible />
+
+<Misconception>
+  "Lasso finds the true features." Only when features are not strongly overlapping and the
+  penalty is chosen well. The next section shows what overlap does.
+</Misconception>
+
+**So:** ridge keeps everything, smaller. Lasso keeps a few, and sets the rest to exactly zero.
+
+<MathDetails summary="The math: the lasso cost and soft thresholding">
+
+Lasso uses the same two parts as ridge: how far the curve misses the points, plus a cost for big coefficients. The only change is how the cost is counted. Ridge squares each coefficient. Lasso takes its size, ignoring the sign:
+
+$$
+\underbrace{\frac{1}{2n}\sum_{i=1}^{n}\left(y_i - \hat y_i\right)^2}_{\text{how far the model misses}} \;+\; \underbrace{\lambda\sum_{j=1}^{p}\left|\beta_j\right|}_{\text{cost: size of each weight, added up}}
+$$
+
+- $|\beta_j|$ means the weight (coefficient) without its minus sign, so $|-2| = 2$. $\lambda$ is the penalty strength, as before.
+- **Why this makes exact zeros:** a squared cost is tiny for small weights (0.1 costs only 0.01), so ridge barely bothers a small weight. A size cost charges the same rate all the way down to zero, so a weak feature that isn't earning its cost gets cut to exactly 0.
+
+A worked example. Take two features whose best weights with no penalty are **2** and **0.3**, and set the penalty strength to **0.5**. (This is the simple case where the features are unrelated and on the same scale.)
+
+|            | Feature A | Feature B | What the penalty did                                    |
+| ---------- | --------- | --------- | ------------------------------------------------------- |
+| No penalty | 2         | 0.3       | nothing                                                 |
+| Ridge      | 1.33      | 0.2       | divided each weight by 1.5 (that is 1 plus the penalty) |
+| Lasso      | 1.5       | 0         | took 0.5 off each weight, and stopped at 0              |
+
+- **Ridge** shrinks every weight by the same share, so a small weight stays small but is never zero. Why 1.5? Two pulls compete: one toward the best no-penalty weight, one toward 0 that grows with the weight. They balance at the best weight divided by (1 + penalty).
+- **Lasso** takes the same amount off every weight. Feature B only had 0.3 to give, so it hits 0 and is out of the model. This is called **soft thresholding**.
+
+How strong must the penalty be to drop every feature? The strongest feature goes last, so the answer is set by it: roughly, how strongly the most related feature moves with the answer. The slider's far right is 4 times that, so lasso has dropped everything there.
+
+</MathDetails>
+
+## 3. Why lasso hits zero
+
+**Why does lasso zero out a feature when ridge never does?**
+
+Think of a model with just two features. It has two weights (coefficients), so you can show it as a spot on a map. Left to right is the weight on feature 1. Bottom to top is the weight on feature 2.
+
+- **The diamond handle** is the best spot with no penalty. It misses the points the least. Drag it to try other data.
+- **The grey ovals** are spots with the same error. The farther from the handle, the worse the error.
+- **The dashed shape** is a fence. A penalty is like saying "your weights must stay inside this fence". A stronger penalty makes the fence smaller. Ridge's fence is a circle. Lasso's fence is a diamond shape with its corners on the axes.
+- **The big dot** is the answer: the best spot you can reach inside the fence. It is where the lowest oval just touches the fence.
+
+**Why a circle and a diamond?** The fence is every spot that costs the same.
+
+- **Ridge** charges for squares: cost = (weight 1)² + (weight 2)². Every spot with the same cost sits at the same distance from the centre, which is a circle. The square makes a smooth bowl, flat at the bottom: near 0 it barely charges, and it doesn't push a small weight any harder to reach 0.
+- **Lasso** charges for sizes (the modulus, which drops the minus sign): cost = |weight 1| + |weight 2|. Spots with a total of 2 include (2, 0), (1, 1) and (0, 2), and the straight lines between them. Joining all such spots gives a diamond with corners on the axes. The modulus makes a sharp V with its tip at 0: it keeps the same push all the way down to 0, and the tip is where weights get stuck at exactly 0.
+
+A spot on an axis means the other weight is exactly 0, so that feature is out. So the real question is: can the dot land on an axis, and how easily?
+
+Under the slider are two rows of buttons. **Method** switches between Ridge and Lasso. **How the features relate** sets how closely the two features move together: not at all (Unrelated), mostly (Overlapping), or almost like copies of each other (**Twin features**). The closer they move, the longer and thinner the ovals get.
+
+**Try this, in order.** Each step shows one piece of the answer.
+
+1. **Ridge.** Raise the penalty. The dot slides toward the middle but never reaches an axis. Now drag the handle around. Neither weight lands on exactly 0, unless you place the handle itself on an axis.
+2. **Lasso.** Switch to Lasso and set the penalty to about 1. Shaded zones appear. Drag the handle into the zone along an axis. The dot snaps onto that axis, and the weight reads exactly 0, even though the handle's own weight is not 0. Drag it back out and the weight returns.
+3. **Raise the penalty.** The zones widen. A stronger penalty means a smaller fence, and a smaller fence catches more handle positions at a corner.
+4. **Twin features.** Pick Twin features and compare Ridge and Lasso at penalty 2.5. Ridge shares the weight. Lasso keeps one twin and zeroes the other. Move the handle and the survivor can flip.
+
+<WhyLassoHitsZero client:visible />
+
+**Why it happens.** The dot is where the lowest oval first touches the fence. A circle is smooth, so as you move the handle, the touching point glides around the circle and crosses an axis only for one exact handle position. A diamond has a sharp corner on each axis. Ovals from a whole range of handle positions touch the diamond at that same corner, so for all of them the dot sits on the axis. That range is the shaded zone, and it is why lasso zeroes features so easily and ridge does not.
+
+<Misconception>
+  "Lasso keeps the best of the twin features." It keeps one, and which one depends on tiny
+  differences in the data. See [twin features](/concepts/correlation/).
+</Misconception>
+
+**So:** a diamond has corners on the axes, so the solution often lands on one. A circle has no corners, so ridge shrinks but never zeroes.
+
+<MathDetails summary="The math: the penalty as a budget">
+
+The fence is a budget on how big the weights (coefficients) can be in total. The model picks the lowest error it can afford:
+
+$$
+\text{lowest error}\quad\text{while}\quad \underbrace{\sqrt{\beta_1^{2}+\beta_2^{2}} \le t}_{\text{ridge: circle}}\qquad\text{or}\qquad \underbrace{|\beta_1|+|\beta_2| \le t}_{\text{lasso: diamond}}
+$$
+
+- $\beta_1$ and $\beta_2$ are the two weights, and $t$ is the size of the fence. A bigger penalty strength means a smaller $t$.
+- The first fence is every spot at the same straight-line distance from the centre: a circle. The second is every spot with the same total of $|\beta_1|$ and $|\beta_2|$: a diamond.
+- The widget draws the fence exactly as big as the answer needs, so you can see the oval and the fence touch.
+- At a corner of the diamond one weight is exactly 0. A circle has no corners.
+
+</MathDetails>
+
+## 4. Choosing the penalty
+
+**How strong should the penalty be?**
+
+Not by training error: that is always lowest with no penalty at all. You need rows the model did not learn from. That is **cross-validation**, from [the last page](/concepts/validation-cv/). For each penalty strength you want to test:
+
+1. Split the rows into 5 parts (called folds).
+2. Fit the model on 4 parts. Score it on the 5th, which it has not seen.
+3. Repeat so every part gets a turn as the held-out one, then average the 5 scores.
+
+<Misconception>
+  "Pick the penalty that gives the lowest training error." That is always no penalty. Use
+  held-back data instead ([see train, validation and test](/concepts/validation-cv/)).
+</Misconception>
+
+**So:** let held-back data choose the penalty. A well-chosen penalty beats plain fitting, and lasso wins by the most when only a few features matter.
+
+## 5. Units matter
+
+**Does it matter if distance is in km or metres?**
+
+**The example.** A food delivery app wants to predict how long an order takes, in minutes. It has data on 60 past orders. For each order, the model sees two features:
+
+- **Distance:** how far the order travels, in km. Longer trips take longer.
+- **Items:** how many items are in the order (a number from 1 to 8). More items take longer to pack.
+
+The model gives each feature a weight: minutes added per km, and minutes added per item. The penalty charges for the size of each weight. But the size of a weight depends on the unit of its feature.
+
+Say each extra km adds 2.5 minutes. The weight on distance in km is 2.5. Measure the same distance in metres and the weight is 0.0025 minutes per metre: the same effect, a weight 1000 times smaller. The penalty charges the square of the weight, so it charges a million times less. Same feature, very different penalty, only because of the unit.
+
+**Standardizing** fixes this. For each feature, subtract its average and divide by its spread (how far its values typically sit from the average). Now every feature has average 0 and spread 1, whatever its unit. The average and spread come from the training rows only.
+
+**What the widget shows.** The same 60 orders. Part 1 shows the three feature columns as numbers on a line: distance in km, items, and the same distance in metres. Part 2 shows how much penalty each one pays. The switch turns standardizing on and off, so you can see why it matters.
+
+**Try this:** 1) Look at the three rows in part 1: their numbers are very different in size. 2) Look at the bars in part 2. 3) Switch Standardize on and watch both parts change.
+
+<UnitsMatter client:visible />
+
+<Misconception>
+  "The penalty only cares about the data, not the units." It cares about the numbers it
+  sees.
+</Misconception>
+
+**So:** always standardize before you penalize, and fit the scaling on training rows only.
+
+<MathDetails summary="The math: standardizing and the penalty">
+
+Standardizing turns each value $x$ into a distance from the average, counted in spreads:
+
+$$
+z = \frac{x - \bar{x}}{s}
+$$
+
+- $\bar{x}$ is the feature's average and $s$ is its spread (standard deviation). A value at the average becomes 0, and one a spread above becomes 1.
+- A weight per metre is the weight per km divided by 1000, so its square is a million times smaller: $\left(\tfrac{w}{1000}\right)^{2} = \tfrac{w^{2}}{1\,000\,000}$.
+- After standardizing, a weight means "minutes per spread". Distance in km and in metres give the same weight, so they pay the same. The weights are converted back to minutes per km afterwards.
+
+</MathDetails>
+
+## In practice
+
+<InTheWild>
+
+- **Scorecards start with ridge.** Common libraries penalize logistic models with ridge by default. In Python's scikit-learn, `LogisticRegression` has a setting called `C` that sets the penalty strength, but backwards: it is about 1 divided by lambda. A big `C` means a weak penalty and a small `C` means a strong one. The default is `C = 1`.
+- **Fit inside each fold.** Fit WoE bins, scaling and imputation inside each training fold, then penalize. Leaks inflate validation ([see train, validation and test](/concepts/validation-cv/), [WoE and IV](/concepts/woe-iv/)).
+- **Few defaulters, many variables.** With about 200 defaulters and dozens of variables, a penalty is standard. It steadies coefficients that would swing between samples.
+- **Overlapping features.** Ridge shares the weight; lasso keeps one, arbitrarily. Check stability on resamples ([see correlation](/concepts/correlation/)).
+- **Lasso is a screen, not a verdict.** Its choices change with the sample, so refit and review before trusting them.
+- **Check calibration after penalizing.** Shrinkage pulls probabilities toward the average. Coming later in the credit-risk track: Calibration.
+- **Boosting has the same knobs.** XGBoost's `reg_lambda` (L2 on leaf values, default 1), `reg_alpha` (L1) and `gamma` (minimum gain to split) restrain the trees. Learning rate and early stopping restrain them too ([see learning rate](/concepts/learning-rate/)). Coming later: the XGBoost series.
+- **Same idea elsewhere.** Weight decay in neural networks is the same ridge idea. An elastic net mixes ridge and lasso.
+
+</InTheWild>
+
+<RulesOfThumb>
+
+| Situation                            | What to do                                                    |
+| ------------------------------------ | ------------------------------------------------------------- |
+| Many features, few rows, overfitting | Raise the penalty                                             |
+| Overlapping features                 | Ridge (or an elastic net mix)                                 |
+| You want a short list of features    | Lasso, then check stability                                   |
+| Unsure how strong                    | Pick the strength by cross-validation or an out-of-time split |
+| Always                               | Standardize first; don't penalize the intercept               |
+
+</RulesOfThumb>
+

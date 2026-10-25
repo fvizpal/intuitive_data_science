@@ -88,7 +88,7 @@ export function makeTrainingSets(seed: number, count: number, maxN = 200): Strea
 // ---------- least squares ----------
 
 /** Chebyshev T_0..T_degree at t, into out (length degree + 1). */
-function chebyshev(
+export function chebyshev(
   t: number,
   degree: number,
   out: ArrayLike<number> & { [i: number]: number },
@@ -112,7 +112,7 @@ export interface Model {
 /** Hour -> [-1, 1]. */
 export const scaleHour = (h: number): number => (2 * h) / DAY - 1;
 
-function makePredict(coef: Float64Array): (h: number) => number {
+export function makePredict(coef: Float64Array): (h: number) => number {
   const deg = coef.length - 1;
   return (h) => {
     // Clenshaw would do; the plain recurrence is fine at degree <= 12.
