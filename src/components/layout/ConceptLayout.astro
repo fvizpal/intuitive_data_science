@@ -2,6 +2,7 @@
 import '../../styles/global.css';
 import ThemeInit from '../ui/ThemeInit.astro';
 import ThemeToggle from '../ui/ThemeToggle.astro';
+import ScrollToTop from '../ui/ScrollToTop.astro';
 
 interface Link {
   slug: string;
@@ -92,6 +93,8 @@ const card = share ?? summary;
         GitHub
       </a>
     </footer>
+
+    <ScrollToTop />
 
     <script is:inline define:vars={{ slug }}>
       // Progress lives in localStorage only; fail silently if storage is unavailable.

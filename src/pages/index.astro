@@ -1,24 +1,19 @@
 ---
 import { getOrderedConcepts } from '../lib/concepts';
+import { buildMapData } from '../content/tracks';
 import '../styles/global.css';
 import ThemeInit from '../components/ui/ThemeInit.astro';
 import ThemeToggle from '../components/ui/ThemeToggle.astro';
+import ScrollToTop from '../components/ui/ScrollToTop.astro';
 
-import Analytics from '@vercel/analytics/astro'
-
-const TRACKS = [
-  { id: 'optimization', label: 'Optimization' },
-  { id: 'models', label: 'Models' },
-  { id: 'evaluation', label: 'Evaluation' },
-  { id: 'credit-risk', label: 'Credit risk' },
-  { id: 'statistics', label: 'Statistics' },
-] as const;
+import Analytics from '@vercel/analytics/astro';
 
 const concepts = await getOrderedConcepts();
-const byTrack = TRACKS.map((t) => ({
+const bySlug = new Map(concepts.map((c) => [c.data.slug, c]));
+const byTrack = buildMapData(bySlug.keys()).map((t) => ({
   ...t,
-  items: concepts.filter((c) => c.data.track === t.id),
-})).filter((t) => t.items.length > 0);
+  items: t.slugs.map((s) => bySlug.get(s)!),
+}));
 ---
 
 <!doctype html>
@@ -64,6 +59,7 @@ const byTrack = TRACKS.map((t) => ({
                 </li>
               ))}
             </ul>
+            {t.moreComing && <p class="m-0 mt-3 text-sm text-muted">More coming</p>}
           </section>
         ))}
       </nav>
@@ -80,5 +76,7 @@ const byTrack = TRACKS.map((t) => ({
         GitHub
       </a>
     </footer>
+
+    <ScrollToTop />
   </body>
 </html>

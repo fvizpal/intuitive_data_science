@@ -1,7 +1,7 @@
 ---
 title: Regularization
 slug: regularization
-track: models
+track: generalization
 level: beginner
 minutes: 10
 prerequisites: [bias-variance]
@@ -231,7 +231,7 @@ $$
 - **Overlapping features.** Ridge shares the weight; lasso keeps one, arbitrarily. Check stability on resamples ([see correlation](/concepts/correlation/)).
 - **Lasso is a screen, not a verdict.** Its choices change with the sample, so refit and review before trusting them.
 - **Check calibration after penalizing.** Shrinkage pulls probabilities toward the average. Coming later in the credit-risk track: Calibration.
-- **Boosting has the same knobs.** XGBoost's `reg_lambda` (L2 on leaf values, default 1), `reg_alpha` (L1) and `gamma` (minimum gain to split) restrain the trees. Learning rate and early stopping restrain them too ([see learning rate](/concepts/learning-rate/)). Coming later: the XGBoost series.
+- **Boosting has the same knobs.** XGBoost's `reg_lambda` (L2 on leaf values, default 1), `reg_alpha` (L1) and `gamma` (minimum gain to split) restrain the trees. Learning rate and early stopping restrain them too ([see learning rate](/concepts/learning-rate/)). Gradient descent is the engine underneath ([see gradient descent](/concepts/gradient-descent/)). Coming later: the XGBoost series.
 - **Same idea elsewhere.** Weight decay in neural networks is the same ridge idea. An elastic net mixes ridge and lasso.
 
 </InTheWild>

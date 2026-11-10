@@ -1,0 +1,288 @@
+---
+title: Decision trees
+slug: decision-trees
+track: model-families
+level: beginner
+minutes: 10
+prerequisites: [bias-variance]
+summary: A tree asks yes/no questions, each one chosen to make the resulting boxes purer. Left alone it memorizes, so depth and box size keep it in check.
+---
+
+import { PredictTree } from '../../widgets/trees/PredictTree';
+import { OneSplit } from '../../widgets/trees/OneSplit';
+import { BestSplit } from '../../widgets/trees/BestSplit';
+import { GrowTheTree } from '../../widgets/trees/GrowTheTree';
+import { DepthDial } from '../../widgets/trees/DepthDial';
+import { StaircaseFit } from '../../widgets/trees/StaircaseFit';
+
+<Callout title="Prefer another explanation first?">
+  Amazon's MLU-Explain has a scrolling, visual walkthrough of decision trees. This page
+  adds hands-on widgets and the link to overfitting.{' '}
+  <a
+    href="https://mlu-explain.github.io/decision-tree/"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    Open MLU-Explain in a new tab
+  </a>
+  .
+</Callout>
+
+<Hook>How can a model be nothing but a list of yes/no questions?</Hook>
+
+Picture a fruit stall. A crate holds apples and oranges, and you have to sort them without tasting.
+
+You would ask simple questions. _Is it heavy? Is the skin green or orange?_ Each answer sends the fruit one way or the other, into one of two **boxes**. Ask a few more questions inside each box, and the fruit end up in groups that are mostly one kind.
+
+A **decision tree** is exactly that: a list of yes/no questions. The model works out which questions to ask by studying fruit whose kind it already knows. That fruit is its **training data**. Afterwards it uses the questions on new fruit.
+
+On this page every fruit has two measurements:
+
+- **Weight**, in grams. Oranges tend to be heavier.
+- **Skin shade**, on a scale from 0 (fully green) to 10 (fully orange). Oranges tend to score higher.
+
+So a question looks like _"Is the weight under 170 g?"_ or _"Is the skin shade below 5?"_. The overlap is on purpose: some light oranges and some heavy apples exist, so no single question sorts everything perfectly.
+
+The page has four steps: what makes a question good, how the tree picks one, how it grows, and how it goes wrong. It goes wrong by **overfitting**: learning its training fruit so closely, quirks included, that it sorts new fruit badly.
+
+First, a guess.
+
+<PredictTree client:visible />
+
+## 1. One split
+
+**What makes one question better than another?**
+
+A **split** is one question about one feature, such as "weight below 172 g?". It divides the fruit into two boxes. A good question leaves each box less mixed than the box it came from. The **mix** (Gini impurity) measures that: 0 is all one kind, 0.5 is an even mix.
+
+**Try this:** slide the cut across. Watch both boxes' counts and the mix. Find a cut where one box is almost all one kind.
+
+<OneSplit client:visible />
+
+<Misconception>
+  "A good split puts about half the data on each side." No: a good split makes each side
+  purer. The sides can be very uneven.
+</Misconception>
+
+**So:** a split is good when the boxes it makes are purer than the box it came from.
+
+<MathDetails summary="The math: mix and gain">
+
+**The general formula.** For a box with $K$ kinds of item, let $p_k$ be the share of kind $k$. The Gini impurity (the mix) is
+
+$$
+G = 1 - \sum_{k=1}^{K} p_k^2
+$$
+
+It is 0 when one kind makes up the whole box, and largest when all kinds are equally common.
+
+**Our example has two kinds**, apples and oranges. Let $p$ be the share of oranges, so apples are $1 - p$:
+
+$$
+G = 1 - (1-p)^2 - p^2 = 2 \times p \times (1-p)
+$$
+
+- All one kind: $p = 0$ or $p = 1$, so $G = 0$.
+- Even mix: $p = 0.5$, so $G = 2 \times 0.5 \times 0.5 = 0.5$.
+- 9 apples and 3 oranges: $p = 0.25$, so $G = 2 \times 0.25 \times 0.75 = 0.375$.
+
+**After a split**, the mix is the average of the two boxes' mixes, weighted by size. Box A has $n_A$ fruit, box B has $n_B$, and $n = n_A + n_B$:
+
+$$
+G_{\text{after}} = \frac{n_A}{n} \times G_A + \frac{n_B}{n} \times G_B
+$$
+
+$$
+\text{gain} = G_{\text{before}} - G_{\text{after}}
+$$
+
+Entropy, $-\sum_k p_k \times \log_2 p_k$, is another mix measure with a different curve. It usually picks the same cut.
+
+</MathDetails>
+
+## 2. The best split
+
+**How does the tree pick a question?**
+
+It doesn't guess. It tries every possible question and keeps the best one. Here is how.
+
+1. Take one feature, say weight. Line the fruit up from lightest to heaviest.
+2. A cut can go between any two neighbours in that line. With 60 fruit, that is up to 59 possible cuts.
+3. For each cut, work out the **gain** from section 1: how much cleaner the two boxes are than the box before.
+4. Do the same for the other feature, skin shade.
+5. Keep the single cut, on either feature, with the highest gain. That is the question the tree asks.
+
+It never looks further ahead than this one question. That is what **greedy** means.
+
+This section has two parts. Part 1 settles what "better" means. Part 2 shows the tree trying every cut.
+
+**Part 1: what counts as better?** Two questions split the same 100 fruit. If each box guesses its majority kind, both get 70 right. So is one of them better? The switch scores them two ways: **Accuracy** counts correct guesses, and **Mix** checks how clean the boxes are. Flip it and see which way can pick a winner.
+
+**Part 2: try every cut.** Each dot on the chart is one possible cut, and its height is its gain. The tree takes the highest dot. The smallest-box slider bans cuts that would leave a box with too few fruit, such as one that peels off a single fruit.
+
+**Try this:** flip between Accuracy and Mix in Part 1. In Part 2, compare the two features' best cuts, then raise the smallest-box slider and watch dots disappear.
+
+<BestSplit client:visible />
+
+<Misconception>
+  "The tree picks the cut with the best accuracy." Not exactly: purity can prefer a cut
+  that accuracy calls a tie (question B).
+</Misconception>
+
+**So:** a tree tries every cut and keeps the one that makes the purest boxes. It is **greedy**: it never plans two steps ahead.
+
+<MathDetails summary="The math: the numbers behind A and B">
+
+Question A: both boxes hold 35 of one kind and 15 of the other, so $p = 0.7$ and each box has mix $2 \times 0.7 \times 0.3 = 0.42$. Mix after $= 0.42$. Gain $= 0.50 - 0.42 = 0.08$.
+
+Question B: the pure box has mix 0. The other box has 50 apples and 30 oranges, so $p = 0.375$ and mix $= 2 \times 0.375 \times 0.625 = 0.46875$. It holds 80 of 100 fruit, so mix after $= 0.8 \times 0.46875 = 0.375$. Gain $= 0.50 - 0.375 = 0.125$.
+
+The search sorts each feature once and keeps running counts of apples and oranges, so trying every cut is cheap. Candidate cuts sit halfway between neighbouring different values.
+
+</MathDetails>
+
+## 3. Growing a tree
+
+**What happens if you repeat that step?**
+
+Section 2 found one question. It splits the fruit into two boxes, but each box may still be mixed. So the tree does the same thing again, inside each box on its own:
+
+1. Take only the fruit in that box.
+2. Try every cut on both features, as before.
+3. Keep the cut with the highest gain, and split the box in two.
+
+Repeat inside every new box. The first question sits at the top, and each answer leads either to another question or to a **final box**. A final box stops asking and just gives an answer: the kind that most of its fruit are.
+
+To sort a new fruit, you follow the questions down until you reach a final box. The tree's prediction is that box's majority kind. The tree stops splitting a box when it is pure, or when you tell it to.
+
+**How to read the widget.** The map shows every box as a rectangle on the weight and skin-shade plane. Plain shading means the box says apple, hatched means orange. The diagram shows the same tree as questions (ovals) and final boxes. A label like "Apple: 21 of 24" means the box says apple, and 21 of its 24 fruit really are apples. Click a box on the map or in the diagram to select it. **Split the next box** then splits that box with its best cut.
+
+**Checkerboard** is a different data set where apples and oranges sit in alternating squares. Any single cut leaves both sides about half and half, so the gain is almost zero. Two cuts would solve it perfectly, but a tree that looks one question ahead cannot see that.
+
+**Try this:** press Split the next box a few times and watch the boxes and the questions grow together. Then switch to Checkerboard and look at the gain of the first cut.
+
+<GrowTheTree client:visible />
+
+<Misconception>
+  "A tree finds the best possible tree." No: each step picks the best cut right now. The
+  checkerboard needs a first cut that looks useless.
+</Misconception>
+
+**So:** a tree is one step repeated: find the best cut in a box, split it, repeat in each new box.
+
+<MathDetails summary="The math: questions, boxes and units">
+
+Each question is "feature $<$ threshold". The threshold sits halfway between two neighbouring values in the box.
+
+A box predicts its majority kind (ties go to apple). It reports its share of oranges as a probability: oranges ÷ all fruit in the box.
+
+The tree only uses the order of each feature's values. Any change that keeps the order, such as grams to kilograms, gives the same boxes.
+
+</MathDetails>
+
+## 4. When it memorizes
+
+**Why does a tree that fits the training fruit perfectly do worse on new fruit?**
+
+The fruit overlap on purpose. A few oranges are light and green, a few apples are heavy and orange. These oddballs are **noise**: they don't follow the pattern.
+
+Left alone, a tree keeps splitting until every box is pure. To get there it carves a tiny box around each oddball. The training fruit are then 100% right, but those tiny boxes mean nothing for new fruit. That is memorizing, the overfitting from the start of the page.
+
+Two limits hold the tree back:
+
+- **Depth:** the most questions in a row. Depth 1 is a single question.
+- **Smallest box size:** the fewest fruit a box may hold (from section 2).
+
+**What to watch.** The widget grades the tree two ways. **Training accuracy** is how often it is right on the fruit it learned from. **New-fruit accuracy** is how often it is right on 5,000 fresh fruit it has never seen. Only the second one matters. Because the crowds overlap, no rule can beat about 83% on new fruit (the "best any rule can do" line). So 100% on training fruit is too good to be true.
+
+The widget has three panels:
+
+- **One tree.** Raise the depth. The boxes shrink around single fruit, training accuracy climbs, and new-fruit accuracy stalls or falls.
+- **Try every depth.** One tree could be a fluke, so each point here averages 60 trees, each trained on a different sample. It shows where new-fruit accuracy peaks: the sweet spot.
+- **Change the fruit, change the tree.** Six samples of the same size give six different trees. A tree that follows the quirks of its sample changes whenever the sample does. The disagreement figure says how often two such trees give different answers for the same fruit.
+
+**Try this:** raise the depth until training accuracy hits 100%, and watch new-fruit accuracy. Then raise the smallest box size and see the gap between the two shrink.
+
+<DepthDial client:visible />
+
+<Misconception>
+  "Perfect training accuracy means the tree has learned the rule." No: it has memorized
+  the sample.
+</Misconception>
+
+**So:** depth and smallest box size are the leashes on a tree. Without them it memorizes, and a different sample gives a different tree.
+
+<MathDetails summary="The math: leashes and disagreement">
+
+A tree of depth $d$ has at most $2^d$ boxes. The smallest box size blocks any cut that would leave a box with fewer rows.
+
+Both limits do the same job as the penalty on a flexible curve ([see regularization](/concepts/regularization/)).
+
+Disagreement between two trees is the share of a fixed grid of fruit (weight and shade) where their predictions differ.
+
+</MathDetails>
+
+## 5. Trees for numbers
+
+**Can a tree predict a number, such as a delivery time?**
+
+So far the tree answered "which kind?". It can also answer "how much?". Here each dot is a past food delivery: distance on the bottom, minutes it took up the side. Longer trips take longer, with some random wobble.
+
+The tree works the same way, with two changes:
+
+- **Picking a cut.** It chooses the distance that makes the orders on each side have the most similar times (the smallest spread around their average).
+- **Predicting.** A final box answers with the **average time** of the orders inside it. Every distance in that box gets the same answer, so the fit is a flat step. Many boxes in a row make a staircase.
+
+The dashed line is the truth. We know it only because we made up this data: time = 8 + 2.5 minutes per km, plus wobble of about 3 minutes. Real data never shows you the truth, so the error figures here are exact numbers a simulation can give and a real project cannot.
+
+All training orders are between 1 and 10 km. Beyond 10 km (the shaded area) the tree has seen nothing, and there is no box built for it. It just reuses its last box, so the staircase goes flat while the truth keeps rising. A straight line has a slope, so it can carry on.
+
+Depth works as in section 4: more steps follow the dots more closely, and too many start chasing the wobble.
+
+**Try this:** raise the depth and watch the staircase follow the points. Then look beyond 10 km and compare the two error cards. Turn on the straight-line fit and see it keep climbing.
+
+<StaircaseFit client:visible />
+
+<Misconception>
+  "A tree can predict anything the data suggests." Not outside the range it has seen: it
+  repeats its last box.
+</Misconception>
+
+**So:** a tree predicts averages of what it has seen. It can't extend a trend.
+
+<MathDetails summary="The math: regression splits">
+
+A split is chosen to lower the total squared error: the sum of (time − box average)² over all orders.
+
+A box predicts the mean of its rows. Beyond the largest training distance, every point falls in the same last box, so the prediction stays flat.
+
+</MathDetails>
+
+## In practice
+
+<InTheWild>
+
+- **Policy rules are trees.** "Approve if the bureau score is at least 620 and there is no recent delay" reads like policy and is easy to audit ([see from WoE to a scorecard](/concepts/woe-to-scorecard/)).
+- **Cuts and WoE bins are the same idea.** A tree can propose cuts for one feature. Check box sizes and that WoE stays monotonic ([see WoE and IV](/concepts/woe-iv/)).
+- **No scaling, no log.** Trees use only the order of values, so skewed income is fine as is ([see gradient descent for the contrast](/concepts/gradient-descent/)).
+- **Trees can't extrapolate.** A tree trained on past ranges plateaus at the edge, so validate on a later period ([see train, validation and test](/concepts/validation-cv/)).
+- **Rare events need probabilities.** With about 4% defaults, a shallow tree's majority vote says "good" almost everywhere. Use the leaf probabilities with a cutoff ([see threshold, precision and recall](/concepts/threshold-precision-recall/)).
+- **Set the smallest box by defaulters, not rows.** A box of 10 loans with no defaults doesn't prove 0% risk ([see confidence intervals](/concepts/confidence-intervals/)).
+- **One tree is unstable.** Change a few rows and the questions change. Coming next: Random forests and bagging.
+- **In XGBoost,** `max_depth` is this depth, `gamma` is the smallest gain allowed for a cut, and `min_child_weight` is a cousin of the smallest box, measured in a different unit. Coming later: the XGBoost series.
+
+</InTheWild>
+
+<RulesOfThumb>
+
+| Situation                       | What to do                                  |
+| ------------------------------- | ------------------------------------------- |
+| Tree memorizes                  | limit depth or raise the smallest box       |
+| Need readable rules             | grow a shallow tree                         |
+| Features in odd units or skewed | no transform needed                         |
+| Need to extend a trend          | use a different model or add trend features |
+| Single tree is unstable         | average many trees (next page)              |
+| Rare events                     | read leaf probabilities, not majority votes |
+
+</RulesOfThumb>
+

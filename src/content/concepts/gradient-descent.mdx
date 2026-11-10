@@ -1,0 +1,292 @@
+---
+title: Gradient descent
+slug: gradient-descent
+track: optimization
+level: beginner
+minutes: 8
+prerequisites: [learning-rate]
+summary: The gradient points uphill, so you step the other way. A stretched bowl slows you down, and scaling features and momentum speed you up.
+---
+
+import { PredictPrompt } from '../../components/ui/PredictPrompt';
+import { GradientArrows } from '../../widgets/descent/GradientArrows';
+import { DescentTrail } from '../../widgets/descent/DescentTrail';
+import { StretchSteps } from '../../widgets/descent/StretchSteps';
+import { ChangeUnits } from '../../widgets/descent/ChangeUnits';
+
+<Hook>A model has thousands of knobs. How does it know which way to turn each one?</Hook>
+
+<PredictPrompt
+  client:visible
+  question="You are on a hill in thick fog. You can't see the bottom. You can only feel which way the ground slopes under your feet. Your rule: always take a small, careful step downhill. Where do you end up?"
+  choices={[
+    'You walk straight to the bottom',
+    'You get to the bottom, but zigzag on the way',
+    'You may never get there, however long you walk',
+  ]}
+  answer={1}
+  explanation="Small careful steps do get you down. But on a long, narrow hill the slope points across it, not along it, so you zigzag. Section 2 shows it, and shows what a step that is too big does."
+/>
+
+That fog walk is how a model trains. The hill's height is the **loss**: a number for how wrong the model is. Each knob (parameter) is a direction you can walk. **Gradient descent** feels the slope and steps downhill, again and again. The **learning rate** is the size of each step.
+
+## 1. Which way is down
+
+**Which way should you step?**
+
+On a hillside, the slope tells you which way is uphill and how steeply. Here the hill has two knobs, so every point on the map below is one setting of the two knobs. The map works like a hiking map. Each ring joins points of the same height, and height here is the loss. Deeper shade means higher ground. The star is the lowest point, the best setting.
+
+The **gradient** is the slope with a direction: it points straight uphill. Knob 2 can be more **sensitive** than knob 1: the same small nudge changes the loss more. Use the buttons to try that.
+
+<GradientArrows client:visible />
+
+In a real training run, the library works out this arrow for every knob each time the model takes a step. That is the gradient step in the training loop. The step size is the learning rate setting.
+
+<Misconception>
+  "Each step points at the bottom." No. Each step goes the steepest way down from where
+  you stand, and that is not always toward the bottom. On a long, narrow hill the steepest
+  way down points across the hill, at the nearby wall. Try it: pick 16× and drag the dot
+  far to the right. The step points almost straight down, not toward the star.
+</Misconception>
+
+**So:** the gradient is the steepest way up, and always crosses the rings at right angles. Descent steps the other way.
+
+<MathDetails summary="The math: the gradient">
+
+We chose this bowl as a simple stand-in. It is the shape of a linear model's squared error (section 3 uses it on real-looking data), and it is what almost any smooth loss looks like close to its bottom. Real losses can differ far from the bottom. The ½ only keeps the slopes tidy, and the bottom is placed at (0, 0). So the loss is
+
+$$
+f(x, y) = \tfrac{1}{2}\left(x^2 + \kappa\, y^2\right)
+$$
+
+where $\kappa$ says how much more sensitive knob 2 is (the stretch, named in section 2). The gradient is the pair of slopes:
+
+$$
+\nabla f = \left(\frac{\partial f}{\partial x},\ \frac{\partial f}{\partial y}\right) = (x,\ \kappa y)
+$$
+
+- The long arrow is $\nabla f$. Its length is the number in **Slope here**.
+- It is at right angles to the ring, so the slope along the ring is 0.
+- One step of descent: new position $=$ old position $-$ learning rate $\times\ \nabla f$. That is the dashed arrow.
+
+</MathDetails>
+
+## 2. The zigzag
+
+**Why does gradient descent sometimes bounce around instead of sliding down?**
+
+Each step moves you by *step size × slope*. A bigger step gets you down faster, but only up to a point, as we will see.
+
+### Part A: take bigger steps
+
+The **learning rate** is your step size. This hill is narrow. Knob 2 is 10 times as sensitive as knob 1: nudge it a little and the loss changes 10 times as much as for the same nudge to knob 1. On the map, knob 2 is the steep way, across the hill, and knob 1 is the gentle way, along it. You start at the hollow dot.
+
+<DescentTrail client:visible />
+
+You will have seen this in training. You raise the learning rate, the loss starts bouncing up and down, and then it jumps to NaN. That is the "flying off the hill" state: each step overshoots the bottom by more than the last. The fix is the one you just tried, a smaller learning rate.
+
+<Misconception>
+  "Raise the learning rate to go faster." Only up to the biggest safe step. Past it, you
+  never arrive.
+</Misconception>
+
+**So:** there is a biggest step you can take. Past it, you don't arrive.
+
+### Part B: make the hill longer
+
+**What happens to the number of steps when the hill gets narrower?**
+
+How narrow the hill is has a name: the **stretch**. (Machine-learning books call it the *condition number*.) It is how many times more sensitive knob 2 (across the hill) is than knob 1 (along it). A round hill has stretch 1, and the hill above has stretch 10. The more sensitive knob sets the biggest safe step, and the gentle knob then has to crawl.
+
+<StretchSteps client:visible />
+
+This shows up in modelling too. Say one feature is income in rupees and another is age in years. That makes a long, narrow hill like this one. The learning rate has to stay small for income, so age crawls. Training takes thousands of steps, or stops with a "did not converge" warning. Section 3 shows the fix.
+
+**So:** the more sensitive knob caps the step size, and the gentle knob then sets the speed. Ten times the stretch costs about ten times the steps.
+
+<MathDetails summary="The math: why the biggest safe step is 2 divided by the stretch">
+
+**What the letters are.** $x$ is where the dot sits on knob 1 and $y$ is where it sits on knob 2. The bottom is at 0 on both. $\eta$ is the learning rate (step size). $\kappa$ is the stretch.
+
+**One step.** Each knob moves by $\eta$ times its slope. From section 1, the slope on knob 1 is $x$ and the slope on knob 2 is $\kappa y$. So
+
+$$
+x_{\text{new}} = x - \eta x = (1-\eta)\,x, \qquad y_{\text{new}} = y - \eta\kappa y = (1-\eta\kappa)\,y
+$$
+
+Each step multiplies $x$ by $(1-\eta)$ and $y$ by $(1-\eta\kappa)$.
+
+**Many steps.** After $t$ steps you have multiplied $t$ times:
+
+$$
+x_t = (1-\eta)^t\, x_0, \qquad y_t = (1-\eta\kappa)^t\, y_0
+$$
+
+A number multiplied again and again shrinks to 0 only if the multiplier is between $-1$ and $1$. Outside that, it grows. So you arrive only if both multipliers are between $-1$ and $1$.
+
+**Where the 2 comes from.** Take the knob 2 multiplier, $1-\eta\kappa$. At $\eta = 0$ it is 1. As you raise $\eta$ it falls, hits 0 (you land on the bottom of that knob in one step), and keeps falling. It reaches $-1$ when $\eta\kappa = 2$. That is the bounce: the dot jumps to the other side each step. Past it, the multiplier is below $-1$ and the bounces grow. So the biggest safe step is
+
+$$
+\eta < \frac{2}{\kappa}
+$$
+
+The knob 1 multiplier, $1-\eta$, is fine for any $\eta$ below 2, so knob 2 is the one that sets the limit. (On the Learning rate page the limit was 1: that curve's steepness was 2, and 2 divided by 2 is 1.)
+
+**The best step.** Make both multipliers the same size, $1-\eta = -(1-\eta\kappa)$. Solving gives
+
+$$
+\eta = \frac{2}{1+\kappa}
+$$
+
+Each knob then shrinks by $(\kappa-1)/(\kappa+1)$ per step, so neither waits for the other. The loss shrinks by that size squared each step. For stretch 10 that is 12 steps to cover 99%. For stretch 100 it is 116.
+
+</MathDetails>
+
+## 3. Fix the bowl
+
+**Why does the same model take about 10 steps on one table and tens of thousands on another?**
+
+The bowl for a linear model gets its shape from your data. Say you predict a house price from area and bedrooms. Area runs in the thousands of square feet and bedrooms run from 1 to 5, so the bowl is stretched very thin. **Standardizing** (subtract the average, divide by the spread) puts both features on one scale, and the bowl gets rounder.
+
+<ChangeUnits client:visible />
+
+<Misconception>
+  "Scaling only matters for models that use distances." It matters for any model trained
+  by gradient descent, because it reshapes the bowl.
+</Misconception>
+
+**So:** put features on a similar scale before training by gradient descent. Changing only the units can cost you tens of thousands of steps.
+
+<MathDetails summary="The math: why units change the stretch">
+
+**Why a feature's size matters.** The model predicts a price as a weight times area, plus a weight times bedrooms. Nudge the area weight by a small amount and every prediction moves by that amount times the house's area. If the area numbers are 10 times bigger, the same nudge moves every prediction 10 times as much, and the squared error 100 times as much. So a weight's sensitivity grows with the square of its feature's spread.
+
+**So the stretch follows the spreads.** Knob 1 is the area weight and knob 2 is the bedrooms weight. Roughly,
+
+$$
+\text{stretch} \approx \left(\frac{\text{bigger spread}}{\text{smaller spread}}\right)^{2}
+$$
+
+- Square feet: the spreads are about 296 and 1, a ratio of about 280. Squared, that is about 80,000. The overlap between area and bedrooms (they are correlated) lifts it to the 120,000 you saw.
+- Square metres: the spreads are about 27.5 and 1, a ratio of about 26. Squared, about 700, or 1,100 with the overlap.
+- Square km: the area spread is now tiny, so the bedrooms are the bigger spread. The ratio is huge the other way round, and the stretch is over a million.
+
+**After standardizing.** Both spreads are 1, so the ratio is 1 and only the overlap is left. For two standardized features with correlation $r$, the stretch is
+
+$$
+\frac{1+|r|}{1-|r|}
+$$
+
+With $r = 0.6$ that is 4. (Where this comes from: the two directions of the hill have sensitivities $1+r$ and $1-r$. Showing why takes some linear algebra, and it is out of scope here. For the general idea of a stretched bowl, see the [condition number](https://en.wikipedia.org/wiki/Condition_number) and the interactive article [Why Momentum Really Works](https://distill.pub/2017/momentum/).)
+
+The weights found on standardized features, divided by each feature's spread, match the least-squares weights on the raw features.
+
+</MathDetails>
+
+## 4. Momentum
+
+**Can you roll down the hill instead of creeping?**
+
+Section 2 showed the problem. On a long, narrow hill you bounce across it and crawl along it.
+
+Picture a ball instead of a walker who stops and re-thinks every step. The ball keeps some of its speed. **Momentum** does the same: each step is a fresh push downhill *plus* a share of your last step. Momentum 0.9 means you keep 90% of your last step. Here is what that does, in numbers.
+
+**Along the hill.** The push along the hill points the same way every step. Say it is 1 each time. A plain walker moves 1 per step. With momentum 0.9, each step is the push 1 plus a kept part, which is 0.9 of the last step. "Total" is how far along you are after that many steps:
+
+| Step | Plain step | Kept (0.9 × last) | Momentum step (1 + kept) | Plain total | Momentum total |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| 1 | 1 | 0 | 1 | 1 | 1 |
+| 2 | 1 | 0.9 | 1.9 | 2 | 2.9 |
+| 3 | 1 | 1.71 | 2.71 | 3 | 5.61 |
+| 4 | 1 | 2.44 | 3.44 | 4 | 9.05 |
+| 5 | 1 | 3.10 | 4.10 | 5 | **13.14** |
+
+After 5 steps the ball is 13 along, and the walker 5. The pushes keep adding up, and each step builds toward 10.
+
+**Across the hill.** The push across the hill flips every step: right 1, left 1, right 1, left 1. A plain walker swings the full 1 each time. With momentum 0.9, the memory fights each flip. Step 1 is +1. Step 2 is −1 + 0.9 × 1 = −0.1, not −1. Over many steps the swings settle at about half the plain size.
+
+**On the narrow hill from section 2.** Start at the hollow dot, stretch 100, and use the same learning rate (0.0198) every time, so the only difference is the memory. These are counts from this page's own simulation. "Loss left" is the loss still to go, as a share of where you started.
+
+| Momentum | Steps to 99% of the way down | Loss left after 10 steps | Loss left after 30 steps |
+| :--- | ---: | ---: | ---: |
+| 0 (plain) | 116 | 67% | 30% |
+| 0.5 | 33 | 7% | 1.2% |
+| **0.7** | **20** | **7%** | **0.1%** |
+| 0.9 | 16 | 9% | 2.0% |
+| 0.95 | 50 | 37% | 4.7% |
+
+Momentum 0.7 gets there in 20 steps instead of 116, about 6 times fewer. The learning rate did not change.
+
+More memory is not always better. At 0.9 the ball overshoots the bottom: the loss left is 1.0% at step 20, then rises to 2.0% at step 30 before it settles. At 0.95 it overshoots so much that it takes 50 steps.
+
+Training libraries have a `momentum` setting, often 0.9 by default. It is this memory of the last step, and it is why training curves are smoother than plain gradient descent.
+
+<Misconception>
+  "Momentum is just a bigger learning rate." No: it adds memory. It does allow a larger
+  learning rate, but too much memory makes the ball overshoot.
+</Misconception>
+
+**So:** momentum builds speed along the hill and eases the bounce across it. A little memory cuts the steps a lot, and too much overshoots.
+
+<MathDetails summary="The math: the heavy ball">
+
+**The idea in words.** Let $v$ be your last step. The new step is $\beta$ times the last step, plus the usual downhill push $-\eta\,\nabla f$. Then you move by it:
+
+$$
+v_{\text{new}} = \beta\, v_{\text{old}} - \eta\, \nabla f(p), \qquad p_{\text{new}} = p + v_{\text{new}}
+$$
+
+Here $p$ is the dot on the map, $\eta$ is the learning rate, and $\nabla f$ is the slope arrow from section 1. In the first table above, the new push is 1 each step.
+
+**What $\beta$ does.** $\beta = 0$ is ordinary gradient descent. $\beta = 0.9$ keeps 90% of the last step.
+
+**Where the table numbers come from.** Along the hill the push is steady, so each step adds 1 to 90% of the last one: 1, 1.9, 2.71, and so on, building toward
+
+$$
+\frac{1}{1-\beta}
+$$
+
+which is 10 times a plain step at $\beta = 0.9$. Across the hill the push flips sign each step, so the memory fights it, and the swings settle at
+
+$$
+\frac{1}{1+\beta}
+$$
+
+of a plain swing, about 0.53 at $\beta = 0.9$.
+
+**The safe limit.** Remembering lets the push be bigger, so the biggest safe learning rate rises from $2/\kappa$ to
+
+$$
+\eta < \frac{2(1+\beta)}{\kappa}
+$$
+
+**The best settings.** For a given stretch $\kappa$ the best learning rate and momentum have a neat closed form. The derivation is out of scope here, but it is worked out in the interactive article [Why Momentum Really Works](https://distill.pub/2017/momentum/).
+
+</MathDetails>
+
+## In practice
+
+<InTheWild>
+
+- **"Failed to converge" usually means badly scaled features.** Logistic regression solvers warn when the bowl is too stretched. Standardize first ([see units in regularization](/concepts/regularization/)).
+- **WoE-encoded features sit on similar scales.** That is one reason scorecard fits converge quickly ([see from WoE to a scorecard](/concepts/woe-to-scorecard/)).
+- **Many models skip gradient descent.** Linear and ridge regression have a closed form. Lasso uses coordinate descent. Logistic regression uses iterative solvers that use curvature to fix stretched bowls.
+- **Early stopping is a brake.** It watches validation error and stops the descent before the model overfits ([see train, validation and test](/concepts/validation-cv/)).
+- **Boosting is gradient descent on the model's predictions.** Each tree is a step, and the learning rate shrinks it ([see learning rate](/concepts/learning-rate/)). Later in: the XGBoost series.
+- **Training uses a few rows per step.** Real libraries pick a small batch of rows for each step (the `batch_size` setting). Steps are cheaper but noisier. Later in: stochastic and mini-batch gradient descent.
+- **Adaptive methods such as Adam** give every knob its own step size, which is another way to even out a stretched bowl.
+
+</InTheWild>
+
+<RulesOfThumb>
+
+| Situation                        | What to do                                                   |
+| -------------------------------- | ------------------------------------------------------------ |
+| Choosing a learning rate         | Keep it under 2 divided by the steepest curvature            |
+| Stretched bowl                   | Steps scale with the stretch                                 |
+| Momentum                         | Steps scale with the square root of the stretch              |
+| Features in different units      | Standardize first                                            |
+| Stuck or diverging               | Lower the learning rate before anything else                 |
+
+</RulesOfThumb>
+

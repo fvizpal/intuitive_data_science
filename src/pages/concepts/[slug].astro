@@ -1,6 +1,7 @@
 ---
 import { render } from 'astro:content';
 import { getOrderedConcepts } from '../../lib/concepts';
+import { trackNav } from '../../content/tracks';
 import ConceptLayout from '../../components/layout/ConceptLayout.astro';
 import Hook from '../../components/mdx/Hook.astro';
 import Explain from '../../components/mdx/Explain.astro';
@@ -12,12 +13,16 @@ import Callout from '../../components/ui/Callout.astro';
 
 export async function getStaticPaths() {
   const concepts = await getOrderedConcepts();
-  return concepts.map((entry, i) => {
-    const link = (e: (typeof concepts)[number] | undefined) =>
-      e ? { slug: e.data.slug, title: e.data.title } : undefined;
+  const bySlug = new Map(concepts.map((c) => [c.data.slug, c]));
+  const link = (slug: string | undefined) => {
+    const e = slug ? bySlug.get(slug) : undefined;
+    return e ? { slug: e.data.slug, title: e.data.title } : undefined;
+  };
+  return concepts.map((entry) => {
+    const nav = trackNav(entry.data.slug);
     return {
       params: { slug: entry.data.slug },
-      props: { entry, prev: link(concepts[i - 1]), next: link(concepts[i + 1]) },
+      props: { entry, prev: link(nav.prev), next: link(nav.next) },
     };
   });
 }

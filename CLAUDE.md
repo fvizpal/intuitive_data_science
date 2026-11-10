@@ -94,12 +94,26 @@ One concept = one MDX file plus a folder of widgets. Shared math and UI live in 
 ```yaml
 title: Learning rate
 slug: learning-rate
-track: optimization        # optimization | models | evaluation | statistics | credit-risk
+track: optimization        # statistics | optimization | generalization | credit-risk | model-families
 level: beginner            # beginner | intermediate | advanced
 minutes: 4
 prerequisites: [gradient-descent]
 summary: How step size decides whether you converge, crawl, or blow up.
 ```
+
+**Tracks**
+
+Membership and order live in one file, `src/content/tracks.ts`. The home-page map, the content schema and prev/next all read from it. Prev/next stays inside a track.
+
+| id | Label | Question |
+| --- | --- | --- |
+| `statistics` | Statistics | What does my data say, and how sure can I be? |
+| `optimization` | Optimization | How does a model learn? |
+| `generalization` | Generalization | Will this model work on new data, and how do I decide with it? |
+| `credit-risk` | Credit risk | How do I build, check and watch a lending score? |
+| `model-families` | Model families | What kinds of models are there, and how do they work? |
+
+A new page picks one of these tracks; add a new track only when at least two pages need it. A track with no published page is hidden from the map; a track with one page shows a "More coming" note.
 
 **Conventions**
 
@@ -176,18 +190,19 @@ Three MVP concepts first, then one new concept every 2–3 weeks. The credit-ris
 | Concept | Track | Phase | Core visual | Lending note |
 | --- | --- | --- | --- | --- |
 | Learning rate | optimization | MVP | Ball stepping down a loss curve; bounce and divergence | XGBoost `eta` vs number of trees |
-| Bias, variance and overfitting | models | **Done** | Degree slider on temperature data; 200 refits with bias² + variance + noise; train vs new-data error curve and sweet spot; picking the degree by training vs held-back error | Model fits old vintages, fails on new ones; out-of-time checks; too many bins or near-duplicate features |
-| Threshold, precision and recall | models | **Done** | Spam-filter cutoff over two score crowds; four outcomes and accuracy; recall, precision and F1 against the cutoff; 1,000 dots showing rare events; cost curve with the cheapest cutoff | Approval cutoff vs expected losses; precision falls as the base rate falls; review capacity sets the cutoff |
-| Gradient descent (then the XGBoost series) | models | Planned | Ball stepping down a loss curve; the step rule | Fitting a logistic scorecard by hand |
-| Train, validation, test and cross-validation | models | **Done** | Practice / mock test / final exam split with the test error hidden until locked in; 50 coin-flip models showing the winner's curse; 40 points taking turns as the held-back fold, CV vs real error by degree, 100-dataset pick comparison; random vs future split on monthly electricity bills | Out-of-time validation; fit WoE and scaling inside each fold; stratified and grouped folds for rare defaults and repeat borrowers |
-| Regularization | models | **Done** | Ridge penalty on a degree-12 curve with a train vs new-data error sweet spot; 20 coefficient paths for ridge and lasso with exact zeros; circle vs diamond budget on a plane of two weights (twin features); cross-validation explained in five plain steps (no widget); units changing the penalty unless standardized | Penalized logistic scorecards (sklearn C); fit WoE and scaling inside each fold; stable lasso screens; calibration after shrinkage; XGBoost reg_lambda / reg_alpha |
-| Momentum and Adam vs SGD | optimization | Next | Three optimizers racing on a ravine-shaped contour | — |
-| Feature scaling | optimization | Next | Elongated vs round contours; steps zig-zag or go straight | Loan amount vs ratio features |
-| L1 / L2 regularization | models | **Done** | Covered by the Regularization page (coefficient paths, L1 hitting zero) | Pruning bureau variables |
-| ROC and AUC | evaluation | Next | ROC curve built point by point as threshold moves | Gini = 2 × AUC − 1 |
-| Decision tree splits | models | Next | Click to split a 2D dataset; impurity drops | Rule-based policy vs model |
-| k-means | models | Next | Step through assign / update iterations | Customer segments |
-| Cross-validation | evaluation | Next | Folds sliding across the data | Out-of-time validation |
+| Bias, variance and overfitting | generalization | **Done** | Degree slider on temperature data; 200 refits with bias² + variance + noise; train vs new-data error curve and sweet spot; picking the degree by training vs held-back error | Model fits old vintages, fails on new ones; out-of-time checks; too many bins or near-duplicate features |
+| Threshold, precision and recall | generalization | **Done** | Spam-filter cutoff over two score crowds; four outcomes and accuracy; recall, precision and F1 against the cutoff; 1,000 dots showing rare events; cost curve with the cheapest cutoff | Approval cutoff vs expected losses; precision falls as the base rate falls; review capacity sets the cutoff |
+| Gradient descent | optimization | **Done** | Hiking-map hill with a draggable dot, the uphill arrow, your step and side-view height strips; Part A: raising the learning rate on a narrow hill from sliding to bouncing to flying off; Part B: stretch 1 / 10 / 100 with steps to 99% (1, 12, 116); change the units of house area (square km, square metres, square feet) with a Standardize switch, stretch against steps; momentum explained with worked numbers and a table of steps against momentum (no widget) | Logistic regression failing to converge on badly scaled features; WoE features on similar scales; early stopping; boosting as descent on predictions |
+| Train, validation, test and cross-validation | generalization | **Done** | Practice / mock test / final exam split with the test error hidden until locked in; 50 coin-flip models showing the winner's curse; 40 points taking turns as the held-back fold, CV vs real error by degree, 100-dataset pick comparison; random vs future split on monthly electricity bills | Out-of-time validation; fit WoE and scaling inside each fold; stratified and grouped folds for rare defaults and repeat borrowers |
+| Regularization | generalization | **Done** | Ridge penalty on a degree-12 curve with a train vs new-data error sweet spot; 20 coefficient paths for ridge and lasso with exact zeros; circle vs diamond budget on a plane of two weights (twin features); cross-validation explained in five plain steps (no widget); units changing the penalty unless standardized | Penalized logistic scorecards (sklearn C); fit WoE and scaling inside each fold; stable lasso screens; calibration after shrinkage; XGBoost reg_lambda / reg_alpha |
+| Momentum and Adam | optimization | Partly done | Momentum is covered by the Gradient descent page; Adam still planned | — |
+| Stochastic and mini-batch gradient descent | optimization | Planned | A few random rows per step guessing a commute average; wobble shrinks with the square root of the batch size (the pure math is already in `src/widgets/descent/sgd.ts`) | Batch size vs noise; learning-rate schedules |
+| Feature scaling | optimization | **Done** | Covered by the Gradient descent page (house features, raw vs standardized) | Loan amount vs ratio features |
+| L1 / L2 regularization | generalization | **Done** | Covered by the Regularization page (coefficient paths, L1 hitting zero) | Pruning bureau variables |
+| ROC and AUC | credit-risk | Next | ROC curve built point by point as threshold moves | Gini = 2 × AUC − 1 |
+| Decision trees | model-families | **Done** | Cut slider over two fruit crowds with mix and gain; every cut scored on a gain chart, mix vs accuracy on a 100-fruit example; grow a tree box by box beside its diagram, checkerboard where a greedy first cut looks useless; depth and smallest box vs training and new-data accuracy over 60 samples, six different trees; staircase fit of delivery times that cannot extrapolate | Policy rules as trees; tree cuts vs WoE bins; no scaling needed; rare defaults need leaf probabilities; XGBoost max_depth / gamma / min_child_weight |
+| k-means | model-families | Next | Step through assign / update iterations | Customer segments |
+| Cross-validation | generalization | Next | Folds sliding across the data | Out-of-time validation |
 | Sampling and the central limit theorem | statistics | **Done** | Sample averages piling into a bell; 4x the people halves the spread; any data shape becomes a bell; rare events and heavy tails need more | Monthly default rates on a few hundred loans wobble; polls and A/B tests |
 | Confidence intervals | statistics | **Done** | Intervals around a sample average; how wide they are and what 95% means | Uncertainty around a default rate or a Gini |
 | p-values and A/B tests | statistics | Planned | Is a difference real or noise? Simulated null worlds and the share of them as extreme as yours | Champion vs challenger scorecards; comparing default rates |
@@ -201,4 +216,8 @@ Three MVP concepts first, then one new concept every 2–3 weeks. The credit-ris
 | Calibration | credit-risk | Lending track | Reliability curve; apply Platt / isotonic | PD used for pricing |
 | Class imbalance | credit-risk | Lending track | Accuracy vs recall at a 3% default rate; class weights vs SMOTE | Rare defaults |
 | Cost-sensitive threshold | credit-risk | Lending track | Profit curve from a cost matrix | Loss on default vs margin |
+| Random forests and bagging | model-families | Planned | Many trees voting; variance falls as trees are added | Challenger models next to a scorecard |
+| Gradient boosting | model-families | Planned | Trees added one at a time, each fixing the last one's errors | Boosting as descent on predictions |
+| XGBoost parameters | model-families | Planned | Sliders for depth, `eta`, trees and penalties on a fitted model | `eta` vs `n_estimators`, `reg_lambda` / `reg_alpha` |
+| Probability and Bayes | statistics | Planned | Natural-frequency grid; a rare event and a good test still give a low hit rate | Base rates behind default flags and fraud alerts |
 

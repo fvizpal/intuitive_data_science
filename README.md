@@ -50,7 +50,7 @@ Frontmatter looks like this:
 ```yaml
 title: Learning rate
 slug: learning-rate
-track: optimization   # optimization | models | evaluation | statistics | credit-risk
+track: optimization   # statistics | optimization | generalization | credit-risk | model-families
 level: beginner       # beginner | intermediate | advanced
 minutes: 4
 prerequisites: [gradient-descent]
